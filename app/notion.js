@@ -36,9 +36,7 @@ export async function get_completed_recurring_tasks({ timestamp, databaseId }) {
                 {
                     property: "Last edited time",
                     date: {
-                        // Notion doesn't really understand timezones, so we have to work around it. Assuming all
-                        // timestamps in notion are in _local time_, we have to format our string as local time
-                        after: toISOStringLocalTz({ date: timestamp }),
+                        on_or_after: timestamp.toISOString(),
                     },
                 },
                 {
@@ -159,28 +157,6 @@ async function create_new_recurring_task({ task, databaseId }) {
             type: "checkbox",
             checkbox: false,
         },
-        "Parent": {
-            type: "rich_text",
-            rich_text: [
-                {
-                    type: "text",
-                    text: {
-                        content: task.id,
-                    }
-                },
-            ]
-        },
-        "Schedule": {
-            type: "rich_text",
-            rich_text: [
-                {
-                    type: "text",
-                    text: {
-                        content: task.properties.Schedule.rich_text[0].plain_text,
-                    }
-                },
-            ]
-        },
         "Status": {
             type: "select",
             select: {
@@ -193,6 +169,10 @@ async function create_new_recurring_task({ task, databaseId }) {
                 id: task.properties.Priority.select.id,
             },
         },
+        "Tags": {
+            type: "multi_select",
+            multi_select: task.properties.Tags.multi_select.map(m => ({ id: m.id })),
+        },
         "Due date": {
             type: "date",
             date: {
@@ -200,7 +180,29 @@ async function create_new_recurring_task({ task, databaseId }) {
                 // timestamps in notion are in _local time_, we have to format our string as local time
                 start: toISOStringLocalTz({ date: nextDueDate({ schedule: task.properties.Schedule.rich_text[0].plain_text }).next }),
             },
-        }
+        },
+        "Schedule": {
+            type: "rich_text",
+            rich_text: [
+                {
+                    type: "text",
+                    text: {
+                        content: task.properties.Schedule.rich_text[0].plain_text,
+                    }
+                },
+            ]
+        },
+        "Parent": {
+            type: "rich_text",
+            rich_text: [
+                {
+                    type: "text",
+                    text: {
+                        content: task.id,
+                    }
+                },
+            ]
+        },
     };
 
     // Add the page with updated properties to the database
