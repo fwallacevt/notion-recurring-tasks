@@ -2,7 +2,14 @@ name: handle-recurring-tasks
 
 on:
   workflow_dispatch:
-    
+    inputs:
+      logLevel:
+        description: 'Log level'     
+        required: true
+        default: 'warning'
+      tags:
+        description: 'Test scenario tags'  
+
 on:
   schedule:
     - cron: '0 0 * * *' # runs at 00:00 UTC everyday
