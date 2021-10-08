@@ -19,7 +19,7 @@ jobs:
           node-version: "14"
 
       - name: install node packages
-        run: node index.js
+        run: npm install
 
       - name: execute node script
         env:
