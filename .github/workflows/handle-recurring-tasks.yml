@@ -10,10 +10,10 @@ on:
       tags:
         description: 'Test scenario tags'  
 
-# on:
-#   schedule:
-#     - cron: '0 0 * * *' # runs at 00:00 UTC everyday
-#     - cron: '0 12 * * *' # runs at 12:00 UTC everyday
+on:
+  schedule:
+    - cron: '0 0 * * *' # runs at 00:00 UTC everyday
+    - cron: '0 12 * * *' # runs at 12:00 UTC everyday
 
 jobs:
   build:
