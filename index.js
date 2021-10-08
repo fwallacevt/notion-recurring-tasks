@@ -20,8 +20,3 @@ async function handle_recurring_tasks() {
 }
 
 handle_recurring_tasks();
-
-// TODOs:
-// - clean up/modularize (move db functions to db file, time functions to time file?)
-// - add comments/docstrings
-// - post on reddit?
