@@ -6,12 +6,11 @@ import { toISOStringLocalTz, nextDueDate } from "./time_utils.js";
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
-async function query_db({ filter, databaseId }) {
+async function query_db({ options, databaseId }) {
     // Query the given database with the given filter, and return the results. This is a very
     // thin wrapper for other users.
     return await notion.databases.query({
         database_id: databaseId,
-        filter: filter,
         sorts: [
             // Sort by last edited time, descending, so we always get the most recent event first.
             {
@@ -19,6 +18,7 @@ async function query_db({ filter, databaseId }) {
                 direction: "descending",
             }
         ],
+        ...options,
     });
 }
 
@@ -31,28 +31,29 @@ export async function get_completed_recurring_tasks({ timestamp, databaseId }) {
     // Get recurring tasks completed since the given timestamp
     const response = await query_db({
         databaseId,
-        filter: {
-            and: [
-                {
-                    property: "Last edited time",
-                    date: {
-                        on_or_after: timestamp.toISOString(),
+        options: {
+            filter: {
+                and: [
+                    {
+                        property: "Last edited time",
+                        date: {
+                            on_or_after: timestamp.toISOString(),
+                        },
                     },
-                },
-                {
-                    property: "Schedule",
-                    text: {
-                        is_not_empty: true,
+                    {
+                        property: "Schedule",
+                        text: {
+                            is_not_empty: true,
+                        },
                     },
-                },
-                {
-                    property: "Done",
-                    checkbox: {
-                        equals: true,
+                    {
+                        property: "Done",
+                        checkbox: {
+                            equals: true,
+                        },
                     },
-                },
-            ]
-
+                ]
+            }
         }
     });
 
@@ -80,21 +81,23 @@ async function check_open_task_exists_with_name({ name, databaseId }) {
     // Check if an open task by this name already exists.
     const response = await query_db({
         databaseId,
-        filter: {
-            and: [
-                {
-                    property: "Name",
-                    text: {
-                        equals: name,
+        options: {
+            filter: {
+                and: [
+                    {
+                        property: "Name",
+                        text: {
+                            equals: name,
+                        },
                     },
-                },
-                {
-                    property: "Done",
-                    checkbox: {
-                        equals: false,
+                    {
+                        property: "Done",
+                        checkbox: {
+                            equals: false,
+                        },
                     },
-                },
-            ]
+                ]
+            }
         }
     });
 
