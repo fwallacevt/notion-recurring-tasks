@@ -22,6 +22,39 @@ async function query_db({ options, databaseId }) {
     });
 }
 
+export async function get_last_execution_time_utc({ databaseId }) {
+    const response = await query_db({
+        databaseId,
+        options: {
+            page_size: 1,
+        }
+    });
+
+    if (response.results.length > 0) {
+        return { timestamp: new Date(response.results[0].created_time) };
+    } else {
+        // January 1st, 2000
+        return { timestamp: new Date(2000, 0, 1) };
+    }
+}
+
+export async function save_new_execution({ databaseId }) {
+    const properties = {
+        "Name": {
+            type: "title",
+            title: [
+                {
+                    type: 'text',
+                    text: {
+                        content: `Execution ts: ${toISOStringLocalTz({ date: new Date() })}`,
+                    },
+                },
+            ],
+        },
+    };
+    await addPageToDb({ properties, databaseId });
+}
+
 export async function get_completed_recurring_tasks({ timestamp, databaseId }) {
     // Get recurring tasks (have a "Schedule") that have been completed (updated) since the given
     // timestamp. This will also find previously-completed tasks that have been updated, if they

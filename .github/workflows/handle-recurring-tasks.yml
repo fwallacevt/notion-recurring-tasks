@@ -24,7 +24,8 @@ jobs:
       - name: execute node script
         env:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          NOTION_DB_ID: ${{ secrets.NOTION_DB_ID }}
+          NOTION_TASKS_DB_ID: ${{ secrets.NOTION_TASKS_DB_ID }}
+          NOTION_EXECUTIONS_DB_ID: ${{ secrets.NOTION_EXECUTIONS_DB_ID }}
         run: npm start
 
       - name: commit files
