@@ -17,5 +17,7 @@
   - Every (X) months on the (X) day
   - Every (X) months on the (first/second/third/fourth/fifth/last) (monday/tuesday/wednesday/...)
   - Every (X) months on the (first/last) workday
+- [ ] Add tests
+- [ ] Run tests on PRs
 - [ ] Flesh out README
 - [ ] Post on Reddit?
