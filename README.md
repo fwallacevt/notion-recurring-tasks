@@ -19,5 +19,6 @@
   - Every (X) months on the (first/last) workday
 - [ ] Add tests
 - [ ] Run tests on PRs
+- [ ] Sync with Asana (tasks assigned in Asana get copied over)
 - [ ] Flesh out README
 - [ ] Post on Reddit?

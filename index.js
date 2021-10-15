@@ -11,7 +11,6 @@ const EXECUTIONS_DB_ID = process.env.NOTION_EXECUTIONS_DB_ID;
 
 async function handle_recurring_tasks() {
   // First, get the last time this ran
-  const fname = "execution_data.json";
   const ts = await get_last_execution_time_utc({ databaseId: EXECUTIONS_DB_ID });
   console.log(ts);
 

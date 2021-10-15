@@ -1,0 +1,39 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+name = "pypi"
+verify_ssl = true
+
+[scripts]
+# We have to do this because `black` does not play well with PEP 517. Therefore, we can't include it in `dev-packages`
+# without breaking CI, but we don't want to risk developer environments getting setup incorrectly by skipping install.
+# To combat this, provide scripts that will perform all necessary installs for each environment.
+#
+# Also, we have to use `bash -c` to run multiple commands. See https://github.com/pypa/pipenv/issues/2038 and
+# https://github.com/pypa/pipenv/issues/2160 for discussion of why. Basically, pipenv recognizes everything as one
+# "command", which isn't right.
+install_dev = "bash -c \"pip install black && pipenv install -d && pipenv install\""
+format = "bash -c \"isort --profile black . && black .\""
+check = "bash -c \"isort --profile black --check . && black --check . \""
+
+[dev-packages]
+black = "*"
+isort = "*"
+mypy = "*"
+pylint = "*"
+pytest = "*"
+pytest-aiohttp = "*"
+pytest-asyncio = "*"
+pytest-cov = "*"
+pytest-mock = "*"
+pytest-xdist = "*"
+
+[packages]
+aiohttp = {extras = ["speedups"],version = "*"}
+croniter = "*"
+requests = "*"
+
+[requires]
+python_version = "3.10"
+
+[pipenv]
+allow_prereleases = true
