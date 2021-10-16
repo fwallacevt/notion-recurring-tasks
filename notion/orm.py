@@ -79,7 +79,9 @@ class RecordBase(metaclass=ABCMeta):
 
     @classmethod
     def find_all_by(
-        cls: Type[T], client: NotionClient, filter: Mapping[str, Any]
+        cls: Type[T],
+        client: NotionClient,
+        filter: Optional[Mapping[str, Any]] = None,
     ) -> List[T]:
         """Look up records by arbitrary things."""
         result = client.query_db(database_id=cls.database_id(), filter=filter)
@@ -87,7 +89,9 @@ class RecordBase(metaclass=ABCMeta):
 
     @classmethod
     def find_by(
-        cls: Type[T], client: NotionClient, filter: Mapping[str, Any]
+        cls: Type[T],
+        client: NotionClient,
+        filter: Optional[Mapping[str, Any]] = None,
     ) -> Optional[T]:
         """Look up a record by arbitrary things."""
         result = client.query_db(
@@ -98,7 +102,9 @@ class RecordBase(metaclass=ABCMeta):
 
     @classmethod
     def find_by_or_raise(
-        cls: Type[T], client: NotionClient, filter: Mapping[str, Any]
+        cls: Type[T],
+        client: NotionClient,
+        filter: Optional[Mapping[str, Any]] = None,
     ) -> T:
         record = cls.find_by(client=client, filter=filter)
         if record is not None:
@@ -108,7 +114,9 @@ class RecordBase(metaclass=ABCMeta):
 
     @classmethod
     def find_newest_by(
-        cls: Type[T], client: NotionClient, filter: Mapping[str, Any]
+        cls: Type[T],
+        client: NotionClient,
+        filter: Optional[Mapping[str, Any]] = None,
     ) -> Optional[T]:
         """Look up a record by arbitrary things, first by created_time."""
         result = client.query_db(
@@ -121,7 +129,9 @@ class RecordBase(metaclass=ABCMeta):
 
     @classmethod
     def find_newest_by_or_raise(
-        cls: Type[T], client: NotionClient, filter: Mapping[str, Any]
+        cls: Type[T],
+        client: NotionClient,
+        filter: Optional[Mapping[str, Any]] = None,
     ) -> T:
         record = cls.find_newest_by(client=client, filter=filter)
         if record is not None:

@@ -22,12 +22,15 @@ def create_new_recurring_tasks(client: NotionClient, tasks: List[Task]):
         if exists:
             # TODO(fwallace): logging
             # logger.debug(f"Skipping...")
+            print(f"There is an open task with name {t.name} - skipping")
             continue
 
         # Get the next due date, then make sure that we convert to EST so that Notion will display
         # correctly
         next_due = get_next_due_date(t)
-        t.due_date = next_due.astimezone(ZoneInfo("localtime"))
+        t.due_date = next_due.astimezone(ZoneInfo("EST"))
+        t.done = False
+        print(f"Creating new task {t.name}")
         t.insert(client)
 
 
@@ -41,6 +44,7 @@ def handle_recurring_tasks():
 
     # Query all tasks in our database that have been modified since that time
     tasks_to_recreate = Task.find_completed_recurring_tasks_since(client, ts)
+    print(f"Found {len(tasks_to_recreate)} recurring tasks to make...")
 
     # Now, for each of these recurring tasks, we have to create a new task
     # for the next time that schedule should execute (unless there's an outstanding
@@ -51,6 +55,6 @@ def handle_recurring_tasks():
     now = now_utc()
     execution = Execution(
         date_created=now,
-        name=f"""Execution ts: {now.astimezone(ZoneInfo("localtime")).isoformat()}""",
+        name=f"""Execution ts: {now.astimezone(ZoneInfo("EST")).isoformat()}""",
     )
     execution.insert(client)

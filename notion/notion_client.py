@@ -1,3 +1,4 @@
+import json
 from typing import Any, Dict, List, Mapping, Optional
 import requests
 
@@ -39,7 +40,7 @@ class NotionClient:
                 "Authorization": f"{self.api_key}",
                 "Notion-Version": NOTION_API_VERSION,
             },
-            data={**payload, **params},
+            json={**payload, **params},
         )
         response.raise_for_status()
 

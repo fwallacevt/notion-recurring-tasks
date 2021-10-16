@@ -271,7 +271,7 @@ class Task(RecordBase):
                     {
                         "property": "Done",
                         "checkbox": {
-                            "equals": False,
+                            "does_not_equal": True,
                         },
                     },
                 ]

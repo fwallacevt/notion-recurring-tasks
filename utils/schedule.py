@@ -11,7 +11,7 @@ will just be a Cron string. However, it may also be one of:
   - Every (X) months on the (first/last) workday
 """
 
-from datetime import datetime
+from datetime import date, datetime
 from croniter import croniter
 
 from notion import now_utc, Task
@@ -23,4 +23,4 @@ def get_next_due_date(task: Task) -> datetime:
     if task.schedule is None:
         raise Exception(f"Task {task.name} has no schedule")
     iter = croniter(task.schedule, base)
-    return iter.get_next()
+    return iter.get_next(datetime)

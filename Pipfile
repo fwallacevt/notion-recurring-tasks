@@ -35,6 +35,7 @@ aiohttp = {extras = ["speedups"],version = "*"}
 croniter = "*"
 python-dotenv="*"
 requests = "*"
+tzdata="*"
 
 [requires]
 python_version = "3.10"

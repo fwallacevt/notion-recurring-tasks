@@ -91,10 +91,7 @@ class Execution(RecordBase):
         client: NotionClient,
     ) -> datetime:
         """Get the last time this ran, in UTC."""
-        task = cls.find_newest_by(
-            client,
-            {},
-        )
+        task = cls.find_newest_by(client)
 
         if task is not None:
             return task.date_created
