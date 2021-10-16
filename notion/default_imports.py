@@ -9,6 +9,7 @@ from uuid import UUID
 
 from utils.naming import enum_name_to_alias
 
+from .notion_client import NotionClient
 from .orm import (
     now_utc,
     RecordBase,

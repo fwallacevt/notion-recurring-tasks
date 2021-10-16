@@ -2,10 +2,10 @@
 
 ## TODOs
 
-- [ ] Add comments/doc strings
+- [x] Add comments/doc strings
 - [x] Use Notion DB for keeping track of runs, not a file
 - [x] Add gh action to run nightly (date might get messed up because Notion API only compares dates)
-- [ ] Improve copy functionality (should be able to take arbitrary database and property names, fetch the types, and know
+- [x] Improve copy functionality (should be able to take arbitrary database and property names, fetch the types, and know
       how to copy from one to the other; e.g. we know how to copy multi-select, select, date, etc.)
 - [ ] Improve Cron functionality - cron, or:
   - Daily
@@ -19,6 +19,7 @@
   - Every (X) months on the (first/last) workday
 - [ ] Add tests
 - [ ] Run tests on PRs
+      = [ ] Sync with Google calendar
 - [ ] Sync with Asana (tasks assigned in Asana get copied over)
 - [ ] Flesh out README
 - [ ] Post on Reddit?

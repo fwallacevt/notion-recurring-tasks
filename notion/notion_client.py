@@ -1,16 +1,8 @@
-import json
-import os
 from typing import Any, Dict, List, Mapping, Optional
 import requests
 
 NOTION_API_URL = "https://api.notion.com/v1"
 NOTION_API_VERSION = "2021-08-16"
-
-
-# What should this class do? Similar to json utilities, it should deserialize and serialize values
-# Maybe I should port json utilities and teach them how to parse notion-specific structure?
-# I want it to take a json representation of a notion page, and know how to deserialize it
-# Maybe this should be paired with a little ORM wrapper to create typed classes for Notion tables?
 
 
 class NotionClient:
@@ -93,102 +85,3 @@ class NotionClient:
 
         ret = response.json()
         return ret
-
-
-# async def check_open_task_exists_by_name(
-#     client: NotionClient,
-#     # Force everything to be named after this, since there are multiple parameters of the same type.
-#     # This just serves to reduce user error.
-#     *, task_name: str,
-#     database_id: str) -> bool:
-#     """ Check if any open (incomplete) tasks exist with this name. """
-#     response = await client.query_db(database_id=database_id, params={"filter": {
-#         "and": [
-#             {
-#                 "property": "Name",
-#                 "text": {
-#                     "equals": task_name
-#                 }
-#             },
-#             {
-#                 "property": "Done",
-#                 "checkbox": {
-#                     "equals": False,
-#                 },
-#             },
-
-#         ]
-#     }})
-
-#     if len(response["results"]) > 0:
-#         # Found at least one open task by this name
-#         # TODO(fwallace): How do we want to handle logging? loguru?
-#         logger.debug(f"There are {len(response["results"])} open tasks with this name")
-#         return True
-#     else:
-#         # Didn't find anything by this name - proceed!
-#         return False
-
-# async def get_completed_recurring_tasks(client: NotionClient, *, timestamp: , database_id: str) -> List[NotionTask]:
-#     """Get recurring tasks (have a "Schedule") that have been completed (updated) since the given
-#     timestamp. This will also find previously-completed tasks that have been updated, if they
-#     were updated for some reason. We return a list of tasks, de-duplicated on name, that should
-#     be recreated with the next due date on the given schedule."""
-#     # Get recurring tasks completed since the given timestamp
-#     response = await client.query_db
-#     pass
-
-#     // Get recurring tasks completed since the given timestamp
-#     const response = await query_db({
-#         databaseId,
-#         options: {
-#             filter: {
-#                 and: [
-#                     {
-#                         property: "Last edited time",
-#                         date: {
-#                             on_or_after: timestamp.toISOString(),
-#                         },
-#                     },
-#                     {
-#                         property: "Schedule",
-#                         text: {
-#                             is_not_empty: true,
-#                         },
-#                     },
-#                     {
-#                         property: "Done",
-#                         checkbox: {
-#                             equals: true,
-#                         },
-#                     },
-#                 ]
-#             }
-#         }
-#     });
-
-#     // De-duplicate the list of tasks by name
-#     const unique_names = new Set();
-#     const unique_tasks = [];
-#     response.results.forEach(task => {
-#         console.log(task.properties);
-#         const task_name = task.properties.Name.title[0].plain_text;
-#         if (!unique_names.has(task_name)) {
-#             unique_tasks.push(task);
-#             unique_names.add(task_name);
-#         }
-#     });
-#     console.log(`Found ${unique_tasks.length} distinct recurring tasks`);
-
-#     // Return our task list
-#     return {
-#         tasks: unique_tasks
-#     }
-# }
-
-# if __name__ == "__main__":
-#     client = NotionClient(os.environ["NOTION_API_KEY"])
-#     client.query_db(
-#         os.environ["NOTION_DB_ID"],
-#         {},
-#     )
