@@ -1,27 +1,15 @@
-from os import environ
+import os
 from typing import Any, List, Mapping
 import requests
 
 NOTION_API_URL = "https://api.notion.com/v1"
-
-# Needs to support:
-# - Querying databases
-# - Adding pages
-
-# TODO(fwallace): We could write something that will auto-generate these classes (essentially a simple ORM layer)
-# based on the schema returned by https://developers.notion.com/reference/retrieve-a-database. The idea would be
-# to parse the schema and generate a typed class based on that, with functions to serialize and deserialize
-# values accordingly.
+NOTION_API_VERSION = "2021-08-16"
 
 
-class NotionTodoPage:
-    def __init__(self):
-        pass
-
-    # What should this class do? Similar to json utilities, it should deserialize and serialize values
-    # Maybe I should port json utilities and teach them how to parse notion-specific structure?
-    # I want it to take a json representation of a notion page, and know how to deserialize it
-    # Maybe this should be paired with a little ORM wrapper to create typed classes for Notion tables?
+# What should this class do? Similar to json utilities, it should deserialize and serialize values
+# Maybe I should port json utilities and teach them how to parse notion-specific structure?
+# I want it to take a json representation of a notion page, and know how to deserialize it
+# Maybe this should be paired with a little ORM wrapper to create typed classes for Notion tables?
 
 
 class NotionClient:
@@ -41,7 +29,6 @@ class NotionClient:
         ],
     ) -> Mapping[str, Any]:
         """Query a database with the desired parameters."""
-
         # Set the database url
         database_url = f"{NOTION_API_URL}/databases/{database_id}/query"
 
@@ -54,14 +41,14 @@ class NotionClient:
             database_url,
             headers={
                 "Authorization": f"{self.api_key}",
-                "Notion-Version": "2021-08-16",
+                "Notion-Version": NOTION_API_VERSION,
             },
             data=payload,
         )
-        print(response.json())
         response.raise_for_status()
 
-        return response.json()
+        ret = response.json()
+        return ret
 
     def retrieve_db(
         self,
@@ -69,19 +56,16 @@ class NotionClient:
     ) -> Mapping[str, Any]:
         """Retrieve a database."""
         # Set the database url
-        database_url = (
-            f"{NOTION_API_URL}/databases/a3c0596b3fae409aa012e1a491283920"
-        )
+        database_url = f"{NOTION_API_URL}/databases/{database_id}"
 
         # Retrieve the database, and check that the call succeeded
-        response = requests.post(
+        response = requests.get(
             database_url,
             headers={
                 "Authorization": f"{self.api_key}",
-                "Notion-Version": "2021-08-16",
+                "Notion-Version": NOTION_API_VERSION,
             },
         )
-        print(response.json())
         response.raise_for_status()
 
         return response.json()
@@ -91,38 +75,6 @@ class NotionClient:
     ):
         """Add a page, with the database as its parent."""
         pass
-
-
-#     def query_databases(self, integration_token="YOUR INTEGRATION TOKEN"):
-#         database_url = NOTION_URL + DATABASE_ID + "/query"
-#         response = requests.post(
-#             database_url, headers={"Authorization": f"{integration_token}"}
-#         )
-#         if response.status_code != 200:
-#             raise ApiError(f"Response Status: {response.status_code}")
-#         else:
-#             return response.json()
-
-#     def get_projects_titles(self, data_json):
-#         return list(data_json["results"][0]["properties"].keys())
-
-#     def get_projects_data(self, data_json, projects):
-#         projects_data = {}
-#         for p in projects:
-#             if p != "Name" and p != "Date":
-#                 projects_data[p] = [
-#                     data_json["results"][i]["properties"][p]["checkbox"]
-#                     for i in range(len(data_json["results"]))
-#                 ]
-#             elif p == "Date":
-#                 dates = [
-#                     data_json["results"][i]["properties"]["Date"]["date"][
-#                         "start"
-#                     ]
-#                     for i in range(len(data_json["results"]))
-#                 ]
-
-#         return projects_data, dates
 
 
 # async def check_open_task_exists_by_name(
@@ -215,3 +167,10 @@ class NotionClient:
 #         tasks: unique_tasks
 #     }
 # }
+
+if __name__ == "__main__":
+    client = NotionClient(os.environ["NOTION_API_KEY"])
+    client.query_db(
+        os.environ["NOTION_DB_ID"],
+        {},
+    )
