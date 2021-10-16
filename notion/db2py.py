@@ -29,36 +29,6 @@ from utils.serde import Deserializable
 
 from notion.notion_client import NotionClient
 
-# Retrieves a Notion database object, and unpacks it:
-#   https://developers.notion.com/reference/database
-# The json includes a variety of fields, but we really only care about
-# the properties. Since Notion will let you make multiple databases with
-# the same name, we have to have the user set the names.
-
-# Alright, I think I need to simplify this. Really, all I care about right now is typing the Notion json,
-# and being able to create new pages. So, to start, I need to be able to parse Notion-style json into
-# appropriate Python types
-
-
-class NotionPropertyObject(Deserializable):
-    """Fields to describe a Notion property object. See documentation here:
-    https://developers.notion.com/reference/database#database-properties"""
-
-    id: str
-    # TODO(fwallace): type could be an enum of: "title", "rich_text", "number", "select", "multi_select", "date", "people",
-    # "files", "checkbox", "url", "email", "phone_number", "formula", "relation", "rollup", "created_time",
-    # "created_by", "last_edited_time", "last_edited_by"
-    type: str
-    name: str
-
-    # There's also some other metadata, but the name of its key _changes with the type_ (e.g. if `type="select"`,
-    # metadata is stored in `"select": {...}`). It's not a great system...
-
-    def __init__(self, *, id: str, type: str, name: str):
-        self.id = id
-        self.type = type
-        self.name = name
-
 
 class CustomCode:
     """Custom code snippets to inject into an ORM class."""
@@ -721,6 +691,12 @@ async def print_orm_decls(table_id: str, table_name: str):
 
 
 if __name__ == "__main__":
+    # Retrieves a Notion database object, and unpacks it:
+    #   https://developers.notion.com/reference/database
+    # The json includes a variety of fields, but we really only care about
+    # the properties. Since Notion will let you make multiple databases with
+    # the same name, we have to have the user set the names.
+
     argv = sys.argv
     if len(argv) != 3:
         print("USAGE: python db2py.py $TABLE_ID $TABLE_NAME", file=sys.stderr)
