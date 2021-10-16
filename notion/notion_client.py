@@ -1,5 +1,5 @@
 import os
-from typing import Any, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional
 import requests
 
 NOTION_API_URL = "https://api.notion.com/v1"
@@ -30,7 +30,7 @@ class NotionClient:
         database_url = f"{NOTION_API_URL}/databases/{database_id}/query"
 
         # Build the payload. In testing, Notion was able to handle the empty payload.
-        payload = {}
+        payload: Dict[str, Any] = {}
         if filter is not None:
             payload["filter"] = filter
         elif sorts is not None:

@@ -60,14 +60,14 @@ class RecordBase(metaclass=ABCMeta):
         self.title = title
 
     def __str__(self) -> str:
-        return f"{type(self).__name__} {self.id}"
+        return f"{type(self).__name__} {self.title}"
 
     @property
     def title(self) -> str:
         return self.__title
 
     @title.setter
-    def id(self, value: str):
+    def title(self, value: str):
         self.__title = value
 
     @classmethod
