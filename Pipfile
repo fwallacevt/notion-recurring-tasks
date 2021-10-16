@@ -27,6 +27,7 @@ pytest-cov = "*"
 pytest-mock = "*"
 pytest-xdist = "*"
 types-python-dateutil = "*"
+types-requests="*"
 
 [packages]
 aiohttp = {extras = ["speedups"],version = "*"}
