@@ -213,13 +213,10 @@ class RecordBase(metaclass=ABCMeta):
 
     def insert(self, client: NotionClient):
         """Insert this record into the database."""
-        # TODO(fwallace): Figure this out. It should insert json?
-        client.add_page_to_db(self.__class__.database_id(), {})
-        # await conn.inner.execute(
-        #     self.table.insert().values(
-        #         self.serialize_values(self.insertable_values())
-        #     )
-        # )
+        client.add_page_to_db(
+            self.__class__.database_id(),
+            self.serialize_values(self.insertable_values()),
+        )
 
     def save_object_columns(self):
         """Save the value of all the object-type columns, for later reference."""

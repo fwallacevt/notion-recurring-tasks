@@ -201,7 +201,7 @@ class CheckboxType(PropertyType):
     def serialization_expr(self, value_expr: str) -> str:
         """Take an expression returning a local value, and return an
         expression that returns a database value."""
-        return f"{value_expr}.isoformat()"
+        return value_expr
 
 
 class RichTextType(PropertyType):
@@ -231,7 +231,7 @@ class RichTextType(PropertyType):
     def serialization_expr(self, value_expr: str) -> str:
         """Take an expression returning a local value, and return an
         expression that returns a database value."""
-        return f"{value_expr}.isoformat()"
+        return f"""[{{"type": "text", "text": {{"content": {value_expr}}}}}]"""
 
 
 class DateType(PropertyType):
@@ -261,7 +261,7 @@ class DateType(PropertyType):
     def serialization_expr(self, value_expr: str) -> str:
         """Take an expression returning a local value, and return an
         expression that returns a database value."""
-        return f"{value_expr}.isoformat()"
+        return f"""{{"start": {value_expr}.isoformat()}}"""
 
 
 class TimestampType(PropertyType):
@@ -291,7 +291,7 @@ class TimestampType(PropertyType):
     def serialization_expr(self, value_expr: str) -> str:
         """Take an expression returning a local value, and return an
         expression that returns a database value."""
-        return f"{value_expr}.isoformat()"
+        return None
 
 
 class SelectType(PropertyType):
@@ -364,7 +364,7 @@ class {property_to_enum_class_name(self.name)}(Enum):
     def serialization_expr(self, value_expr: str) -> str:
         """Take an expression returning a local value, and return an
         expression that returns a database value."""
-        return f""""id": ({value_expr}).value"""
+        return f"""{{"id": ({value_expr}).value}}"""
 
 
 class MultiSelectType(PropertyType):
@@ -403,7 +403,7 @@ class MultiSelectType(PropertyType):
 
     def python_type(self) -> str:
         """The type to use for our member variable in Python."""
-        return f"{property_to_enum_class_name(self.name)}"
+        return f"List[{property_to_enum_class_name(self.name)}]"
 
     def has_enum(self) -> bool:
         """Does this type have an a set of values? If so, what are they?"""
@@ -433,7 +433,7 @@ class {property_to_enum_class_name(self.name)}(Enum):
         """Take an expression returning a local value, and return an
         expression that returns a database value."""
         # Here, we need to return a _list of objects_, of shape {"id": enum id}
-        id_expressions = [f"""{{"id": v.value}} for v in ({value_expr})"""]
+        id_expressions = [f"""[{{"id": v.value}} for v in {value_expr}]"""]
         return f"""{",".join(id_expressions)}"""
 
 
@@ -515,11 +515,18 @@ class Column:
     def serialization_expr(self) -> Optional[str]:
         """Return an optional `"name": serialize_func(orig.name)` code fragment
         if one will be needed."""
+        # These are fields that Notion sets on its end
+        if self.notion_name.lower() in ["last edited time", "date created"]:
+            return None
 
-        lvalue = f"new_values[{repr(self.name)}]"
+        lvalue = f"values[{repr(self.name)}]"
+        svalue = f"new_values[{repr(self.notion_name)}]"
         return f"""\
         if {repr(self.name)} in values:
-            {lvalue} = {self.data_type.serialization_expr(lvalue)}
+            {svalue} = {{
+                "type": "{self.data_type.notion_type()}",
+                "{self.data_type.notion_type()}": {self.data_type.serialization_expr(lvalue)},
+            }}
 """
 
     def enum_class_definition(self) -> Optional[str]:
@@ -548,9 +555,6 @@ class Table:
         """Generate source code for this table."""
         class_name = self.class_name()
         table_name = self.name
-        notion_columns = "\n        ".join(
-            c.notion_column() for c in self.columns
-        )
 
         # Define properties for all columns, with types
         properties_str = "\n    ".join(
@@ -591,10 +595,7 @@ class Table:
         deserialization_exprs = list(
             filter(None, (col.deserialization_expr() for col in self.columns))
         )
-        if not deserialization_exprs:
-            deserialize_values_str = ""
-        else:
-            deserialize_values_str = f"""
+        deserialize_values_str = f"""
     @classmethod
     def deserialize_values(cls, values: Mapping[str, Any]) -> Mapping[str, Any]:
         new_values: Dict[str, Any] = {{}}
@@ -607,15 +608,12 @@ class Table:
         serialization_exprs = list(
             filter(None, (col.serialization_expr() for col in self.columns))
         )
-        if not serialization_exprs:
-            serialize_values_str = ""
-        else:
-            serialize_values_str = f"""
+        serialize_values_str = f"""
     @classmethod
     def serialize_values(cls, values: Mapping[str, Any]) -> Mapping[str, Any]:
-        values = dict(values) # Shallow copy and convert.
+        new_values = {{}} # Shallow copy and convert.
 {"".join(serialization_exprs)}\
-        return values
+        return new_values
 """
 
         # If we have any members requiring enum classes, override
@@ -643,11 +641,6 @@ class {class_name}(RecordBase):
     _column_names: ClassVar[Set[str]] = {{{", ".join(map(repr, sorted({c.name for c in self.columns})))}}}
 
     _object_columns: ClassVar[Set[str]] = {_object_columns_str}
-
-    # Attach our SQLAlchemy schema as class metadata.
-    table: ClassVar[List[str]] = [
-        {notion_columns}
-    ]
 
     @classmethod
     def database_id(cls) -> str:

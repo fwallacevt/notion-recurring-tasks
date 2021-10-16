@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Any, Dict, List, Mapping, Optional
 import requests
@@ -72,7 +73,26 @@ class NotionClient:
 
     def add_page_to_db(self, database_id: str, properties: Mapping[str, Any]):
         """Add a page, with the database as its parent."""
-        pass
+        # Build the db url
+        database_url = f"{NOTION_API_URL}/pages"
+
+        # Insert a value, and check that the call succeeded
+        data = {
+            "parent": {"database_id": database_id},
+            "properties": properties,
+        }
+        response = requests.post(
+            database_url,
+            headers={
+                "Authorization": f"{self.api_key}",
+                "Notion-Version": NOTION_API_VERSION,
+            },
+            json=data,
+        )
+        response.raise_for_status()
+
+        ret = response.json()
+        return ret
 
 
 # async def check_open_task_exists_by_name(
