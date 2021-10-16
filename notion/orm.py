@@ -90,7 +90,9 @@ class RecordBase(metaclass=ABCMeta):
         cls: Type[T], client: NotionClient, filter: Mapping[str, Any]
     ) -> Optional[T]:
         """Look up a record by arbitrary things."""
-        result = client.query_db(database_id=cls.database_id(), filter=filter)
+        result = client.query_db(
+            database_id=cls.database_id(), filter=filter, page_size=1
+        )
         # Get the first record, or None
         return cls.unpack_record(next(iter(result), None))
 
@@ -113,37 +115,12 @@ class RecordBase(metaclass=ABCMeta):
             database_id=cls.database_id(),
             filter=filter,
             sorts=[{"timestamp": "created_time", "direction": "descending"}],
+            page_size=1,
         )
         return cls.unpack_record(next(iter(result), None))
 
     @classmethod
     def find_newest_by_or_raise(
-        cls: Type[T], client: NotionClient, filter: Mapping[str, Any]
-    ) -> T:
-        record = cls.find_newest_by(client=client, filter=filter)
-        if record is not None:
-            return record
-        else:
-            raise Exception(
-                f"cannot find {cls.__name__}. Filter: {str(filter)}"
-            )
-
-    @classmethod
-    def find_recently_edited_by(
-        cls: Type[T], client: NotionClient, filter: Mapping[str, Any]
-    ) -> Optional[T]:
-        """Look up a record by arbitrary things, first by last_edited_time."""
-        result = client.query_db(
-            database_id=cls.database_id(),
-            filter=filter,
-            sorts=[
-                {"timestamp": "last_edited_time", "direction": "descending"}
-            ],
-        )
-        return cls.unpack_record(next(iter(result), None))
-
-    @classmethod
-    def find_recently_edited_by_or_raise(
         cls: Type[T], client: NotionClient, filter: Mapping[str, Any]
     ) -> T:
         record = cls.find_newest_by(client=client, filter=filter)

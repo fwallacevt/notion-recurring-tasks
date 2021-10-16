@@ -17,6 +17,7 @@ class NotionClient:
         # By default, sort by last edited time in descending order
         sorts: Optional[List[Mapping[str, str]]] = None,
         params: Mapping[str, Any] = {},
+        page_size: Optional[int] = None,
     ) -> List[Mapping[str, Any]]:
         """Query a database with the desired parameters."""
         # Set the database url
@@ -26,8 +27,10 @@ class NotionClient:
         payload: Dict[str, Any] = {}
         if filter is not None:
             payload["filter"] = filter
-        elif sorts is not None:
+        if sorts is not None:
             payload["sorts"] = sorts
+        if page_size is not None:
+            payload["page_size"] = page_size
 
         # Query the database with the provided parameters, and check that the call succeeded
         response = requests.post(
