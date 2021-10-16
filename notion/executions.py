@@ -9,7 +9,7 @@ from .default_imports import *  # pylint: disable=unused-wildcard-import
 
 class Execution(RecordBase):
     "ORM wrapper for row in `executions`."
-    _column_names: ClassVar[Set[str]] = {"name"}
+    _column_names: ClassVar[Set[str]] = {"date_created", "name"}
 
     _object_columns: ClassVar[Set[str]] = set()
 
@@ -23,6 +23,7 @@ class Execution(RecordBase):
     def __init__(
         self,
         *,  # Force the remaining parameters to always be keywords.
+        date_created: datetime,
         name: str,
     ):
         # Initialize the superclass first
@@ -34,10 +35,20 @@ class Execution(RecordBase):
         # These assignments here are mypy magic: They actually propagate the
         # argument types above onto the the associated member variables,
         # making all of our member variables typed.
+        self.__date_created = date_created
         self.__name = name
 
         # Finally, save the current state of any object-like columns
         self.save_object_columns()
+
+    @property
+    def date_created(self) -> datetime:
+        return self.__date_created
+
+    @date_created.setter
+    def date_created(self, value: datetime):
+        self.__date_created = value
+        self.mark_column_changed("date_created")
 
     @property
     def name(self) -> str:
@@ -53,6 +64,10 @@ class Execution(RecordBase):
         cls, values: Mapping[str, Any]
     ) -> Mapping[str, Any]:
         new_values: Dict[str, Any] = {}
+        if "Date created" in values:
+            new_values["date_created"] = dateutil.parser.isoparse(
+                values["Date created"]["created_time"]
+            )
         if "Name" in values:
             new_values["name"] = values["Name"]["title"][0]["plain_text"]
         return new_values
@@ -70,4 +85,20 @@ class Execution(RecordBase):
         return new_values
 
     # == BEGIN CUSTOM CODE ==
-    # Custom code goes here.
+    @classmethod
+    def get_last_execution_time_utc(
+        cls,
+        client: NotionClient,
+    ) -> datetime:
+        """Get the last time this ran, in UTC."""
+        task = cls.find_newest_by(
+            client,
+            {},
+        )
+
+        if task is not None:
+            return task.date_created
+        else:
+            # If this is the first execution, return a timestamp far in the past so we'll
+            # get all tasks completed ever.
+            return datetime.fromtimestamp(0)
