@@ -119,7 +119,7 @@ class PropertyType(metaclass=ABCMeta):
         """Parse a Notion data type specified as JSON."""
         type = json["type"]
         if type == "date":
-            return TimestampType(json)
+            return DateType(json)
         elif type == "last_edited_time":
             return TimestampType(json)
         elif type == "created_time":
@@ -152,6 +152,18 @@ class PropertyType(metaclass=ABCMeta):
         """The type to use for our member variable in Python."""
         pass
 
+    @abstractmethod
+    def deserialization_expr(self, value_expr: str) -> str:
+        """Take an expression returning a database value, and return an
+        expression that returns a local value."""
+        pass
+
+    @abstractmethod
+    def serialization_expr(self, value_expr: str) -> str:
+        """Take an expression returning a local value, and return an
+        expression that returns a database value."""
+        pass
+
     def has_enum(self) -> bool:
         """Does this type have an a set of values? If so, what are they?"""
         return False
@@ -160,21 +172,6 @@ class PropertyType(metaclass=ABCMeta):
         """Take the allowed values for this column and turn them into a valid
         enum class, if applicable."""
         raise Exception("datatype {self} does not need an enum.")
-
-    def needs_serialization(self) -> bool:
-        """Does this type have special serialization via `deserialization_expr`
-        and `serialization_expr`?"""
-        return False
-
-    def deserialization_expr(self, value_expr: str) -> str:
-        """Take an expression returning a database value, and return an
-        expression that returns a local value."""
-        raise Exception("datatype {self} does not require deserialization")
-
-    def serialization_expr(self, value_expr: str) -> str:
-        """Take an expression returning a local value, and return an
-        expression that returns a database value."""
-        raise Exception("datatype {self} does not require serialization")
 
 
 class CheckboxType(PropertyType):
@@ -196,6 +193,16 @@ class CheckboxType(PropertyType):
         """The type to use for our member variable in Python."""
         return "bool"
 
+    def deserialization_expr(self, value_expr: str) -> str:
+        """Take an expression returning a database value, and return an
+        expression that returns a local value."""
+        return f"""{value_expr}["{self.type}"]"""
+
+    def serialization_expr(self, value_expr: str) -> str:
+        """Take an expression returning a local value, and return an
+        expression that returns a database value."""
+        return f"{value_expr}.isoformat()"
+
 
 class RichTextType(PropertyType):
     def __init__(self, json: Any):
@@ -215,6 +222,46 @@ class RichTextType(PropertyType):
     def python_type(self) -> str:
         """The type to use for our member variable in Python."""
         return "str"
+
+    def deserialization_expr(self, value_expr: str) -> str:
+        """Take an expression returning a database value, and return an
+        expression that returns a local value."""
+        return f"""{value_expr}["{self.type}"][0]["plain_text"]"""
+
+    def serialization_expr(self, value_expr: str) -> str:
+        """Take an expression returning a local value, and return an
+        expression that returns a database value."""
+        return f"{value_expr}.isoformat()"
+
+
+class DateType(PropertyType):
+    def __init__(self, json: Any):
+        """Initialize the type, unpacking values as necessary. json will look like:
+        {
+            "id": "'Y6%3C",
+            "name": "Date Created",
+            "type": "created_time",
+            "created_time": {}
+        }"""
+        super().__init__(json)
+
+    def notion_type(self) -> str:
+        """The type to pass to Notion."""
+        return self.type
+
+    def python_type(self) -> str:
+        """The type to use for our member variable in Python."""
+        return "datetime"
+
+    def deserialization_expr(self, value_expr: str) -> str:
+        """Take an expression returning a database value, and return an
+        expression that returns a local value."""
+        return f"""dateutil.parser.isoparse({value_expr}["{self.type}"]["start"])"""
+
+    def serialization_expr(self, value_expr: str) -> str:
+        """Take an expression returning a local value, and return an
+        expression that returns a database value."""
+        return f"{value_expr}.isoformat()"
 
 
 class TimestampType(PropertyType):
@@ -236,15 +283,10 @@ class TimestampType(PropertyType):
         """The type to use for our member variable in Python."""
         return "datetime"
 
-    def needs_serialization(self) -> bool:
-        """Does this type have special serialization via `deserialization_expr`
-        and `serialization_expr`?"""
-        return True
-
     def deserialization_expr(self, value_expr: str) -> str:
         """Take an expression returning a database value, and return an
         expression that returns a local value."""
-        return f"dateutil.parser.isoparse({value_expr})"
+        return f"""dateutil.parser.isoparse({value_expr}["{self.type}"])"""
 
     def serialization_expr(self, value_expr: str) -> str:
         """Take an expression returning a local value, and return an
@@ -314,15 +356,10 @@ class {property_to_enum_class_name(self.name)}(Enum):
 
     {enum_values}"""
 
-    def needs_serialization(self) -> bool:
-        """Does this type have special serialization via `deserialization_expr`
-        and `serialization_expr`?"""
-        return True
-
     def deserialization_expr(self, value_expr: str) -> str:
         """Take an expression returning a database value, and return an
         expression that returns a local value."""
-        return f"""{property_to_enum_class_name(self.name)}(enum_name_to_alias({value_expr}["name"]))"""
+        return f"""{property_to_enum_class_name(self.name)}[enum_name_to_alias({value_expr}["{self.type}"]["name"])]"""
 
     def serialization_expr(self, value_expr: str) -> str:
         """Take an expression returning a local value, and return an
@@ -387,15 +424,10 @@ class {property_to_enum_class_name(self.name)}(Enum):
 
     {enum_values}"""
 
-    def needs_serialization(self) -> bool:
-        """Does this type have special serialization via `deserialization_expr`
-        and `serialization_expr`?"""
-        return True
-
     def deserialization_expr(self, value_expr: str) -> str:
         """Take an expression returning a database value, and return an
         expression that returns a local value."""
-        return f"""{property_to_enum_class_name(self.name)}(enum_name_to_alias({value_expr}["name"]))"""
+        return f"""[{property_to_enum_class_name(self.name)}[enum_name_to_alias(t["name"])] for t in {value_expr}["{self.type}"]]"""
 
     def serialization_expr(self, value_expr: str) -> str:
         """Take an expression returning a local value, and return an
@@ -473,26 +505,22 @@ class Column:
     def deserialization_expr(self) -> Optional[str]:
         """Return an optional `"name": deserialize_func(orig.name)` code fragment if
         one will be needed."""
-        if self.data_type.needs_serialization():
-            lvalue = f"values[{repr(self.name)}]"
-            return f"""\
-        if {repr(self.name)} in values:
-            {lvalue} = {self.data_type.deserialization_expr(lvalue)}
+        lvalue = f"values[{repr(self.notion_name)}]"
+        svalue = f"new_values[{repr(self.name)}]"
+        return f"""\
+        if {repr(self.notion_name)} in values:
+            {svalue} = {self.data_type.deserialization_expr(lvalue)}
 """
-        else:
-            return None
 
     def serialization_expr(self) -> Optional[str]:
         """Return an optional `"name": serialize_func(orig.name)` code fragment
         if one will be needed."""
-        if self.data_type.needs_serialization():
-            lvalue = f"values[{repr(self.name)}]"
-            return f"""\
+
+        lvalue = f"new_values[{repr(self.name)}]"
+        return f"""\
         if {repr(self.name)} in values:
             {lvalue} = {self.data_type.serialization_expr(lvalue)}
 """
-        else:
-            return None
 
     def enum_class_definition(self) -> Optional[str]:
         if self.data_type.has_enum():
@@ -569,9 +597,9 @@ class Table:
             deserialize_values_str = f"""
     @classmethod
     def deserialize_values(cls, values: Mapping[str, Any]) -> Mapping[str, Any]:
-        values = dict(values)
+        new_values: Dict[str, Any] = {{}}
 {"".join(deserialization_exprs)}\
-        return values
+        return new_values
 """
 
         # If we have any members requiring custom serialization, override
@@ -610,7 +638,7 @@ from .default_imports import *  # pylint: disable=unused-wildcard-import
 
 {enum_class_str}
 
-class {class_name}:
+class {class_name}(RecordBase):
     "ORM wrapper for row in `{table_name}`."
     _column_names: ClassVar[Set[str]] = {{{", ".join(map(repr, sorted({c.name for c in self.columns})))}}}
 
@@ -621,13 +649,20 @@ class {class_name}:
         {notion_columns}
     ]
 
+    @classmethod
+    def database_id(cls) -> str:
+        \"\"\"Unpack the id of this database from the environment, according to naming convention:
+        NOTION_{{table name}}_DB_ID. For example, an ORM object named "ToDo" will look for
+        NOTION_TO_DO_DB_ID in the environment.\"\"\"
+        return os.environ["NOTION_{table_name.replace(" ", "_").upper()}_DB_ID"]
+
     def __init__(
         self,
         *,  # Force the remaining parameters to always be keywords.
         {init_params}
     ):
         # Initialize the superclass first
-        super().__init__(id)
+        super().__init__(name)
 
         # Make sure we initialize `_updated_columns`, because each of the initializations below depend on it being set.
         self._updated_columns = set()
@@ -649,7 +684,6 @@ class {class_name}:
 
 def process_column(
     name: str,
-    is_nullable: bool,
     data_type: Any,
 ) -> Dict[str, Any]:
     """
@@ -657,10 +691,13 @@ def process_column(
     this script requires to generate the ORM. It's very similar dbcrossbar's
     column schema, but it includes an extra field: "default_value".
     """
-    # A dbcrossbar schema for the column.
+    # A notion schema for the column. Notion has _*VERY*_ loose restrictions on
+    # databases, meaning basically anything can be null. I happen to know a couple
+    # columns actually won't be, so I hardcode those here.
+    non_nullable_columns = ["date created", "last edited time", "name"]
     return {
         "name": name,
-        "is_nullable": is_nullable,
+        "is_nullable": name.lower() not in non_nullable_columns,
         "data_type": data_type,
     }
 
@@ -675,7 +712,7 @@ def get_columns_json(table_id: str, table_name: str) -> Mapping[str, Any]:
 
     return {
         "name": table_name,
-        "columns": [process_column(k, True, v) for k, v in properties.items()],
+        "columns": [process_column(k, v) for k, v in properties.items()],
     }
 
 
@@ -696,7 +733,3 @@ if __name__ == "__main__":
         print("USAGE: python db2py.py $TABLE_ID $TABLE_NAME", file=sys.stderr)
         sys.exit(1)
     asyncio.run(print_orm_decls(argv[1], argv[2]))
-
-# TODO(fwallace): The only non-nullable fields, as far as I know, are name, date_created, and last_edited_time, but that
-# isn't currently reflected here. I think I'll have to set manually, because Notion doesn't really let us have
-# "non-nullable" fields

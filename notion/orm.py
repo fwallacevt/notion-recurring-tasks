@@ -78,7 +78,7 @@ class RecordBase(metaclass=ABCMeta):
         raise Exception(f"ORM {cls} must implement database_id()")
 
     @classmethod
-    async def find_all_by(
+    def find_all_by(
         cls: Type[T], client: NotionClient, filter: Mapping[str, Any]
     ) -> List[T]:
         """Look up records by arbitrary things."""
@@ -86,7 +86,7 @@ class RecordBase(metaclass=ABCMeta):
         return cls.unpack_records(result)
 
     @classmethod
-    async def find_by(
+    def find_by(
         cls: Type[T], client: NotionClient, filter: Mapping[str, Any]
     ) -> Optional[T]:
         """Look up a record by arbitrary things."""
@@ -95,17 +95,17 @@ class RecordBase(metaclass=ABCMeta):
         return cls.unpack_record(next(iter(result), None))
 
     @classmethod
-    async def find_by_or_raise(
+    def find_by_or_raise(
         cls: Type[T], client: NotionClient, filter: Mapping[str, Any]
     ) -> T:
-        record = await cls.find_by(client=client, filter=filter)
+        record = cls.find_by(client=client, filter=filter)
         if record is not None:
             return record
         else:
             raise Exception(f"cannot find {cls.__name__} with filter {filter}")
 
     @classmethod
-    async def find_newest_by(
+    def find_newest_by(
         cls: Type[T], client: NotionClient, filter: Mapping[str, Any]
     ) -> Optional[T]:
         """Look up a record by arbitrary things, first by created_time."""
@@ -117,10 +117,10 @@ class RecordBase(metaclass=ABCMeta):
         return cls.unpack_record(next(iter(result), None))
 
     @classmethod
-    async def find_newest_by_or_raise(
+    def find_newest_by_or_raise(
         cls: Type[T], client: NotionClient, filter: Mapping[str, Any]
     ) -> T:
-        record = await cls.find_newest_by(client=client, filter=filter)
+        record = cls.find_newest_by(client=client, filter=filter)
         if record is not None:
             return record
         else:
@@ -129,7 +129,7 @@ class RecordBase(metaclass=ABCMeta):
             )
 
     @classmethod
-    async def find_recently_edited_by(
+    def find_recently_edited_by(
         cls: Type[T], client: NotionClient, filter: Mapping[str, Any]
     ) -> Optional[T]:
         """Look up a record by arbitrary things, first by last_edited_time."""
@@ -143,10 +143,10 @@ class RecordBase(metaclass=ABCMeta):
         return cls.unpack_record(next(iter(result), None))
 
     @classmethod
-    async def find_recently_edited_by_or_raise(
+    def find_recently_edited_by_or_raise(
         cls: Type[T], client: NotionClient, filter: Mapping[str, Any]
     ) -> T:
-        record = await cls.find_newest_by(client=client, filter=filter)
+        record = cls.find_newest_by(client=client, filter=filter)
         if record is not None:
             return record
         else:
@@ -211,7 +211,7 @@ class RecordBase(metaclass=ABCMeta):
         # Make a copy so our callers don't accidentally update this object.
         return dict({k: getattr(self, k) for k in self._column_names})
 
-    async def insert(self, client: NotionClient):
+    def insert(self, client: NotionClient):
         """Insert this record into the database."""
         # TODO(fwallace): Figure this out. It should insert json?
         client.add_page_to_db(self.__class__.database_id(), {})
@@ -254,7 +254,7 @@ class RecordBase(metaclass=ABCMeta):
             del values["last_edited_time"]
         return values
 
-    async def update(self, client: NotionClient):
+    def update(self, client: NotionClient):
         """Update this record in the database with the values we have in memory."""
         # TODO(fwallace): Implement this
         # client.update()
