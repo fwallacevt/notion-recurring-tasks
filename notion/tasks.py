@@ -284,7 +284,7 @@ class Task(RecordBase):
         cls,
         client: NotionClient,
         timestamp: datetime,
-    ) -> Set["Task"]:
+    ) -> List["Task"]:
         """Get recurring tasks (have a "Schedule") that have been completed (updated) since the given
         timestamp. This will also find previously-completed tasks that have been updated, if they
         were updated for some reason. We return a list of tasks, de-duplicated on name, that should
@@ -315,11 +315,11 @@ class Task(RecordBase):
             },
         )
 
-        unique_names: Set[str] = Set()
-        unique_tasks: Set["Task"] = Set()
+        unique_names: Set[str] = set()
+        unique_tasks: List["Task"] = []
         for t in tasks:
             if t.name not in unique_names:
                 unique_names.add(t.name)
-                unique_tasks.add(t)
+                unique_tasks.append(t)
 
         return unique_tasks

@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "acdc2eda4bc5d0c5c721e78538ead42328a417cb804030d984674e129f25004f"
+            "sha256": "47d486671072afceb39e4feea00ef141ed4735c49b7fb021c3c1c0b6762b49e1"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -395,6 +395,14 @@
             ],
             "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
             "version": "==2.8.2"
+        },
+        "python-dotenv": {
+            "hashes": [
+                "sha256:14f8185cc8d494662683e6914addcb7e95374771e707601dfc70166946b4c4b8",
+                "sha256:bbd3da593fc49c249397cbfbcc449cf36cb02e75afc8157fcc6a81df6fb7750a"
+            ],
+            "index": "pypi",
+            "version": "==0.19.1"
         },
         "requests": {
             "hashes": [
@@ -1002,6 +1010,14 @@
             ],
             "markers": "python_version >= '3.6'",
             "version": "==1.2.1"
+        },
+        "types-croniter": {
+            "hashes": [
+                "sha256:272b532b50d7db56767c9b01fdb3338bae38629650a115c8d7ced75776a79b2b",
+                "sha256:a3e8aad353d393520e4fa06d59960c98858d267574de684b0420e395061c1ee0"
+            ],
+            "index": "pypi",
+            "version": "==1.0.2"
         },
         "types-python-dateutil": {
             "hashes": [

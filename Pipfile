@@ -33,6 +33,7 @@ types-requests="*"
 [packages]
 aiohttp = {extras = ["speedups"],version = "*"}
 croniter = "*"
+python-dotenv="*"
 requests = "*"
 
 [requires]
