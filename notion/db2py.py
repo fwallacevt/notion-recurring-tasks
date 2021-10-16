@@ -261,7 +261,7 @@ class TimestampType(PropertyType):
     def serialization_expr(self, value_expr: str) -> str:
         """Take an expression returning a local value, and return an
         expression that returns a database value."""
-        return None
+        raise Exception("datatype {self} does not know how to serialize.")
 
 
 class SelectType(PropertyType):
@@ -696,7 +696,6 @@ if __name__ == "__main__":
     # The json includes a variety of fields, but we really only care about
     # the properties. Since Notion will let you make multiple databases with
     # the same name, we have to have the user set the names.
-
     argv = sys.argv
     if len(argv) != 3:
         print("USAGE: python db2py.py $TABLE_ID $TABLE_NAME", file=sys.stderr)
