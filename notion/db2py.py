@@ -15,19 +15,19 @@ sys.path.append("..")
 
 from abc import ABCMeta, abstractmethod
 import asyncio
-import json
 from os import environ, path
 import re
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 from utils.naming import (
     enum_name_to_alias,
+    property_name_to_column_name,
     property_to_enum_class_name,
     table_to_class_name,
 )
 from utils.serde import Deserializable
 
-from notion.notion_db import NotionClient
+from notion.notion_client import NotionClient
 
 # Retrieves a Notion database object, and unpacks it:
 #   https://developers.notion.com/reference/database
@@ -156,7 +156,7 @@ class PropertyType(metaclass=ABCMeta):
         """Does this type have an a set of values? If so, what are they?"""
         return False
 
-    def enum_class(self) -> str:
+    def enum_class_definition(self) -> str:
         """Take the allowed values for this column and turn them into a valid
         enum class, if applicable."""
         raise Exception("datatype {self} does not need an enum.")
@@ -293,23 +293,23 @@ class SelectType(PropertyType):
 
     def python_type(self) -> str:
         """The type to use for our member variable in Python."""
-        return f"{property_to_enum_class_name(self.type)}"
+        return f"{property_to_enum_class_name(self.name)}"
 
     def has_enum(self) -> bool:
         """Does this type have an a set of values? If so, what are they?"""
         return True
 
-    def enum_class(self) -> str:
+    def enum_class_definition(self) -> str:
         """Take the allowed values for this column and turn them into a valid
         enum class, if applicable."""
         enum_values = f"\n    ".join(
             [
-                f"""{enum_name_to_alias(o["name"])} = {o["id"]}"""
+                f"""{enum_name_to_alias(o["name"])} = "{o["id"]}\""""
                 for o in self.options
             ]
         )
         return f"""\
-class {property_to_enum_class_name(self.type)}(Enum):
+class {property_to_enum_class_name(self.name)}(Enum):
     "Enum for {self.name} values, mapping name to id."
 
     {enum_values}"""
@@ -322,7 +322,7 @@ class {property_to_enum_class_name(self.type)}(Enum):
     def deserialization_expr(self, value_expr: str) -> str:
         """Take an expression returning a database value, and return an
         expression that returns a local value."""
-        return f"""{property_to_enum_class_name(self.type)}(enum_name_to_alias({value_expr}["name"]))"""
+        return f"""{property_to_enum_class_name(self.name)}(enum_name_to_alias({value_expr}["name"]))"""
 
     def serialization_expr(self, value_expr: str) -> str:
         """Take an expression returning a local value, and return an
@@ -366,23 +366,23 @@ class MultiSelectType(PropertyType):
 
     def python_type(self) -> str:
         """The type to use for our member variable in Python."""
-        return f"{property_to_enum_class_name(self.type)}"
+        return f"{property_to_enum_class_name(self.name)}"
 
     def has_enum(self) -> bool:
         """Does this type have an a set of values? If so, what are they?"""
         return True
 
-    def enum_class(self) -> str:
+    def enum_class_definition(self) -> str:
         """Take the allowed values for this column and turn them into a valid
         enum class, if applicable."""
         enum_values = f"\n    ".join(
             [
-                f"""{enum_name_to_alias(o["name"])} = {o["id"]}"""
+                f"""{enum_name_to_alias(o["name"])} = "{o["id"]}\""""
                 for o in self.options
             ]
         )
         return f"""\
-class {property_to_enum_class_name(self.type)}(Enum):
+class {property_to_enum_class_name(self.name)}(Enum):
     "Enum for {self.name} values, mapping name to id."
 
     {enum_values}"""
@@ -395,7 +395,7 @@ class {property_to_enum_class_name(self.type)}(Enum):
     def deserialization_expr(self, value_expr: str) -> str:
         """Take an expression returning a database value, and return an
         expression that returns a local value."""
-        return f"""{property_to_enum_class_name(self.type)}(enum_name_to_alias({value_expr}["name"]))"""
+        return f"""{property_to_enum_class_name(self.name)}(enum_name_to_alias({value_expr}["name"]))"""
 
     def serialization_expr(self, value_expr: str) -> str:
         """Take an expression returning a local value, and return an
@@ -409,7 +409,8 @@ class Column:
     """A Notion "property" (column)."""
 
     def __init__(self, name: str, is_nullable: bool, data_type: Any):
-        self.name = name
+        self.notion_name = name
+        self.name = property_name_to_column_name(name)
         self.is_nullable = is_nullable
         self.data_type = PropertyType.from_notion_json(data_type)
 
@@ -490,6 +491,12 @@ class Column:
         if {repr(self.name)} in values:
             {lvalue} = {self.data_type.serialization_expr(lvalue)}
 """
+        else:
+            return None
+
+    def enum_class_definition(self) -> Optional[str]:
+        if self.data_type.has_enum():
+            return self.data_type.enum_class_definition()
         else:
             return None
 
@@ -583,6 +590,16 @@ class Table:
         return values
 """
 
+        # If we have any members requiring enum classes, override
+        # define them.
+        enum_classes = list(
+            filter(None, (col.enum_class_definition() for col in self.columns))
+        )
+        if not enum_classes:
+            enum_class_str = ""
+        else:
+            enum_class_str = "\n\n".join(enum_classes)
+
         return f"""# Auto-generated using table2py.py, do not edit except in the sections
 # marked with "# == BEGIN CUSTOM ...".
 from .default_imports import *  # pylint: disable=unused-wildcard-import
@@ -591,6 +608,7 @@ from .default_imports import *  # pylint: disable=unused-wildcard-import
 {custom.imports}
 # == END CUSTOM IMPORTS ==
 
+{enum_class_str}
 
 class {class_name}:
     "ORM wrapper for row in `{table_name}`."

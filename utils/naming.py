@@ -28,11 +28,15 @@ def enum_name_to_alias(name: str) -> str:
     return name.replace(" ", "_").upper()
 
 
+def property_name_to_column_name(name: str) -> str:
+    """Convert names like "To do" to "to_do"."""
+    return name.replace(" ", "_").lower()
+
+
 def property_to_enum_class_name(name: str) -> str:
     """Convert names like "Due date" to "DueDate"."""
-    # First, convert to snake case, so we can reuse table_to_class_name
-    name = name.replace(" ", "_").lower()
-    return f"{table_to_class_name(name)}Enum"
+    components = name.split(" ")
+    return "".join(c.capitalize() for c in components)
 
 
 def table_to_class_name(name: str) -> str:

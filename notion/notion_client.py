@@ -1,5 +1,5 @@
 import os
-from typing import Any, List, Mapping
+from typing import Any, List, Mapping, Optional
 import requests
 
 NOTION_API_URL = "https://api.notion.com/v1"
@@ -18,23 +18,23 @@ class NotionClient:
 
     def query_db(
         self,
+        *,
         database_id: str,
-        params: Mapping[str, Any],
+        filter: Optional[Mapping[str, Any]] = None,
         # By default, sort by last edited time in descending order
-        sorts: List[Mapping[str, str]] = [
-            {
-                "timestamp": "last_edited_time",
-                "direction": "descending",
-            }
-        ],
-    ) -> Mapping[str, Any]:
+        sorts: Optional[List[Mapping[str, str]]] = None,
+        params: Mapping[str, Any] = {},
+    ) -> List[Mapping[str, Any]]:
         """Query a database with the desired parameters."""
         # Set the database url
         database_url = f"{NOTION_API_URL}/databases/{database_id}/query"
 
-        # Build the payload
-        # Wow, I'm tired... how do I copy a dictionary again?
-        payload = {"sorts": sorts, **params}
+        # Build the payload. In testing, Notion was able to handle the empty payload.
+        payload = {}
+        if filter is not None:
+            payload["filter"] = filter
+        elif sorts is not None:
+            payload["sorts"] = sorts
 
         # Query the database with the provided parameters, and check that the call succeeded
         response = requests.post(
@@ -43,12 +43,12 @@ class NotionClient:
                 "Authorization": f"{self.api_key}",
                 "Notion-Version": NOTION_API_VERSION,
             },
-            data=payload,
+            data={**payload, **params},
         )
         response.raise_for_status()
 
         ret = response.json()
-        return ret
+        return ret["results"]
 
     def retrieve_db(
         self,
@@ -70,9 +70,7 @@ class NotionClient:
 
         return response.json()
 
-    async def add_page_to_db(
-        self, database_id: str, properties: Mapping[str, Any]
-    ):
+    def add_page_to_db(self, database_id: str, properties: Mapping[str, Any]):
         """Add a page, with the database as its parent."""
         pass
 
@@ -168,9 +166,9 @@ class NotionClient:
 #     }
 # }
 
-if __name__ == "__main__":
-    client = NotionClient(os.environ["NOTION_API_KEY"])
-    client.query_db(
-        os.environ["NOTION_DB_ID"],
-        {},
-    )
+# if __name__ == "__main__":
+#     client = NotionClient(os.environ["NOTION_API_KEY"])
+#     client.query_db(
+#         os.environ["NOTION_DB_ID"],
+#         {},
+#     )
