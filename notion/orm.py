@@ -6,7 +6,7 @@ lightweight, typed and asynchronous."""
 
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
-from datetime import date as datetime, timezone
+from datetime import datetime, timezone
 from typing import (
     Any,
     Callable,
