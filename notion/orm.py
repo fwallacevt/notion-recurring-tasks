@@ -4,10 +4,9 @@ our database.
 We basically rolled our own ORM, because we wanted something that was
 lightweight, typed and asynchronous."""
 
-from abc import ABCMeta, abstractclassmethod, abstractmethod
+from abc import ABCMeta, abstractmethod
 from copy import deepcopy
-from datetime import date as datetime_date, datetime, timezone
-import itertools
+from datetime import date as datetime, timezone
 from typing import (
     Any,
     Callable,
@@ -19,7 +18,6 @@ from typing import (
     Type,
     TypeVar,
 )
-from uuid import UUID
 
 from .notion_client import NotionClient
 
