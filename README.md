@@ -23,5 +23,5 @@
 - [ ] Run tests on PRs
       = [ ] Sync with Google calendar
 - [ ] Sync with Asana (tasks assigned in Asana get copied over)
-- [ ] Flesh out README
+- [ ] Flesh out README/documentation
 - [ ] Post on Reddit?

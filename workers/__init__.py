@@ -1,1 +1,1 @@
-"""Various Notion applications."""
+"""Entry points for Notion applications."""
