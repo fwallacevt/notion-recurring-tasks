@@ -18,6 +18,10 @@ jobs:
         with:
           python-version: "3.10.0"
 
+      - name: Install pipenv
+        run: |
+          pip install pipenv
+
       - name: install python packages
         run: pipenv install
 
