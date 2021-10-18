@@ -111,20 +111,21 @@ class Schedule:
 
 def parse_frequency_and_interval(to_parse: str) -> Tuple[Interval, int]:
     """Parse a string with frequency and interval."""
-    # TODO(fwallace): Throw an exception if the string isn't appropriately formatted (check using regex)
-
     parts = to_parse.split(" ")
-
-    # We can ignore the "Every" - skip straight to frequency
-    frequency = int(parts[1])
-
-    # Then, parse the interval as an enum
     try:
+        # We can ignore the "Every" - skip straight to frequency
+        frequency = int(parts[1])
+
+        # Then, parse the interval as an enum
         interval = Interval[parts[2].upper()]
+
+        return interval, frequency
     except KeyError:
         raise Exception(f"No known interval {parts[2]}")
-
-    return interval, frequency
+    except Exception as e:
+        raise Exception(
+            f"Failed to parse frequency and interval string '{to_parse}', error: {e}"
+        )
 
 
 def parse_start_from(to_parse: str) -> StartFrom:
@@ -136,6 +137,10 @@ def parse_start_from(to_parse: str) -> StartFrom:
         return ret
     except KeyError:
         raise Exception(f"No known start from {to_parse[5:]}")
+    except Exception as e:
+        raise Exception(
+            f"Failed to parse start from string '{to_parse}', error: {e}"
+        )
 
 
 WEEKDAYS = {
