@@ -8,7 +8,7 @@
 - [x] Improve copy functionality (should be able to take arbitrary database and property names, fetch the types, and know
       how to copy from one to the other; e.g. we know how to copy multi-select, select, date, etc.)
 - [x] Add gh action to run python job 2x/day
-- [ ] Remove/archive JS code
+- [x] Remove/archive JS code
 - [ ] Improve Cron functionality - cron, or:
   - Daily
   - Weekly (on same day)
@@ -21,7 +21,8 @@
   - Every (X) months on the (first/last) workday
 - [ ] Add tests
 - [ ] Run tests on PRs
-      = [ ] Sync with Google calendar
+- [ ] Sync with Google calendar
 - [ ] Sync with Asana (tasks assigned in Asana get copied over)
 - [ ] Flesh out README/documentation
+  - [ ] Add a badge?
 - [ ] Post on Reddit?
