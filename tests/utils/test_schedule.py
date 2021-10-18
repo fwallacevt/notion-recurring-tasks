@@ -6,6 +6,7 @@ import re
 from utils.schedule import (
     Interval,
     StartFrom,
+    handle_special_cases,
     parse_days,
     parse_frequency_and_interval,
     parse_numerics,
@@ -86,6 +87,30 @@ def test_parse_weekdays():
         ),
     ):
         parse_weekdays("on day 7")
+
+
+def test_handle_special_cases():
+    """Unit test `handle_special_cases`."""
+    assert handle_special_cases("Every day") == "Every 1 weeks, on 0-6"
+    assert (
+        handle_special_cases("Every day, at 9am")
+        == "Every 1 weeks, on 0-6, at 9am"
+    )
+    assert handle_special_cases("Every weekday") == "Every 1 weeks, on 0-4"
+    assert (
+        handle_special_cases("Every weekday, at 9am")
+        == "Every 1 weeks, on 0-4, at 9am"
+    )
+    assert (
+        handle_special_cases("Every saturday/sun")
+        == "Every 1 weeks, on saturday/sun"
+    )
+    assert (
+        handle_special_cases("Every saturday/sun, at 9am")
+        == "Every 1 weeks, on saturday/sun, at 9am"
+    )
+
+    assert handle_special_cases("Every 1 weeks") == "Every 1 weeks"
 
 
 #   - Every (X) days (from due date/now)

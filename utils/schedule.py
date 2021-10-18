@@ -2,7 +2,7 @@
 will just be a Cron string. However, it may also be one of:
   - Every (X) days (from due date/now)
   - Every (day/weekday)
-  - Every (Mon/Tues/Weds...)
+  - Every (Mon/Tue/Weds...)
   - Every (X) weeks on (monday/tuesday/wednesday/...)
   - Every (X) months on the (X) day
   - Every (X) months on the (first/last) day
@@ -56,6 +56,17 @@ class Interval(Enum):
     YEARS = 4
 
 
+WEEKDAYS = {
+    **{d.lower(): i for i, d in enumerate(calendar.day_name)},
+    **{d.lower(): i for i, d in enumerate(calendar.day_abbr)},
+}
+
+MONTHS = {
+    **{m.lower(): i for i, m in enumerate(calendar.month_name)},
+    **{m.lower(): i for i, m in enumerate(calendar.month_abbr)},
+}
+
+
 class Schedule:
     # The interval (can be one of "days", "weeks", "months", "years")
     interval: Interval
@@ -74,6 +85,9 @@ class Schedule:
 
     def __init__(self, schedule: str):
         """Parse the schedule string and initialize with appropriate values."""
+        # Handle some special cases...
+        schedule = handle_special_cases(schedule)
+
         # Handle the simple case of "Every (X) (interval)". Components are separated by
         # commas to make processing easier. Then, each piece is separated by a space.
         components = [s.strip() for s in schedule.split(",")]
@@ -107,6 +121,24 @@ class Schedule:
                     self.days = parse_days(s)
 
         # TODO(fwallace): Finally, handle time (e.g. at 9am)
+
+
+def handle_special_cases(to_parse: str) -> str:
+    """Handle special case strings. We just convert them to known format
+    so our generic parsers can handle them:
+        - Every (day/weekday) (at 9am)
+        - Every (Mon/Tue/Weds...) (at 9am)"""
+    s = to_parse.lower()
+    if s.startswith("every day"):
+        return s.replace("every day", "Every 1 weeks, on 0-6")
+    elif s.startswith("every weekday"):
+        return s.replace("every weekday", "Every 1 weeks, on 0-4")
+    elif any([s.startswith(f"every {k}") for k in WEEKDAYS]):
+        # Otherwise, if it's every Mon/Tue/Weds, handle that...
+        parts = s.split(",")
+        return s.replace(parts[0], f"Every 1 weeks, on {parts[0][6:]}")
+
+    return to_parse
 
 
 def parse_frequency_and_interval(to_parse: str) -> Tuple[Interval, int]:
@@ -143,17 +175,10 @@ def parse_start_from(to_parse: str) -> StartFrom:
         )
 
 
-WEEKDAYS = {
-    **{d.lower(): i for i, d in enumerate(calendar.day_name)},
-    **{d.lower(): i for i, d in enumerate(calendar.day_abbr)},
-}
-
-
 def parse_weekdays(to_parse: str) -> List[int]:
     """In addition to parsing days numerically, we also parse weekday strings:
     - on (monday/tuesday/...)
-    - on (mon/tues/...)"""
-    print(to_parse)
+    - on (mon/tue/...)"""
     try:
         # If the string to parse starts with "on", strip that out.
         to_parse = to_parse.replace("on ", "")
@@ -262,15 +287,13 @@ def parse_numerics(to_parse: str) -> List[int]:
 
 """
     - Every (X) days/weeks/months/years (will default to from completed date)
-
     - Every (X) days/weeks/months/years (from due date/completed date)
-
     - Every (X) weeks on (monday/tuesday/wednesday/...)
     - Every (X) months on the last day
     - Every (X) months/years on day (X)
 
     - Every (day/weekday)
-    - Every (Mon/Tues/Weds...)
+    - Every (Mon/Tue/Weds...)
     - Every (Jan/Feb/March...) on the (X) day
 
 There's also a time component (e.g. "at 9am")"""
