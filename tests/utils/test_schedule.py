@@ -1,6 +1,8 @@
 """Test the schedule utility."""
 
 from utils.schedule import (
+    Interval,
+    StartFrom,
     parse_days,
     parse_frequency_and_interval,
     parse_numerics,
