@@ -111,13 +111,18 @@ class Schedule:
 
 def parse_frequency_and_interval(to_parse: str) -> Tuple[Interval, int]:
     """Parse a string with frequency and interval."""
+    # TODO(fwallace): Throw an exception if the string isn't appropriately formatted (check using regex)
+
     parts = to_parse.split(" ")
 
     # We can ignore the "Every" - skip straight to frequency
     frequency = int(parts[1])
 
     # Then, parse the interval as an enum
-    interval = Interval[parts[2].upper()]
+    try:
+        interval = Interval[parts[2].upper()]
+    except KeyError:
+        raise Exception(f"No known interval {parts[2]}")
 
     return interval, frequency
 
@@ -126,7 +131,11 @@ def parse_start_from(to_parse: str) -> StartFrom:
     """Parse a string with "from due date/completed date"."""
     # Strip the "from", replace the space with an underscore,
     # and uppercase. Then, return the associated enum.
-    return StartFrom[to_parse[5:].replace(" ", "_").upper()]
+    try:
+        ret = StartFrom[to_parse[5:].replace(" ", "_").upper()]
+        return ret
+    except KeyError:
+        raise Exception(f"No known start from {to_parse[5:]}")
 
 
 WEEKDAYS = {
@@ -139,30 +148,59 @@ def parse_weekdays(to_parse: str) -> List[int]:
     """In addition to parsing days numerically, we also parse weekday strings:
     - on (monday/tuesday/...)
     - on (mon/tues/...)"""
-    # If the string to parse starts with "on", strip that out.
-    to_parse = to_parse.replace("on ", "")
+    print(to_parse)
+    try:
+        # If the string to parse starts with "on", strip that out.
+        to_parse = to_parse.replace("on ", "")
 
-    numeric_values = parse_days(to_parse)
+        numeric_values = parse_days(to_parse)
 
-    # If we got some values from `parse_days`, then we can assume they
-    # didn't specify weekdays as strings
-    if len(numeric_values) > 0:
-        return numeric_values
+        # If we got some values from `parse_days`, then we can assume they
+        # didn't specify weekdays as strings
+        if len(numeric_values) > 0:
+            return check_numerics(numeric_values, 0, 6)
 
-    # Otherwise, parse weekdays. We'll do this by turning them into a
-    # numeric format compatible with `parse_days()` (replacing all weekday
-    # strings with numbers)
-    pattern = "|".join(sorted(re.escape(k) for k in WEEKDAYS))
-    to_parse = re.sub(
-        pattern,
-        # We have to cast to a string to make re.sub happy (it expects a function
-        # that returns a string here)
-        lambda m: str(WEEKDAYS[m.group(0).lower()]),
-        to_parse,
-        flags=re.IGNORECASE,
-    )
+        # Otherwise, parse weekdays. We'll do this by turning them into a
+        # numeric format compatible with `parse_days()` (replacing all weekday
+        # strings with numbers)
+        #
+        # There is some subtle but _VERY IMPORTANT_ behavior here. Most day abbreviations are
+        # subsets of the full day (e.g. "tue", "tuesday"). We sort the list of day names by
+        # length in reverse order to make sure that full day names are _matched first_. If we
+        # don't do this, a string like "monday/tuesday" may be turned into "0day/1day".
+        pattern = "|".join(
+            sorted(
+                (re.escape(k) for k in WEEKDAYS),
+                key=lambda s: len(s),
+                reverse=True,
+            )
+        )
+        to_parse = re.sub(
+            pattern,
+            # We have to cast to a string to make re.sub happy (it expects a function
+            # that returns a string here)
+            lambda m: str(WEEKDAYS[m.group(0).lower()]),
+            to_parse,
+            flags=re.IGNORECASE,
+        )
 
-    return parse_numerics(to_parse)
+        return check_numerics(parse_numerics(to_parse), 0, 6)
+    except Exception as e:
+        raise Exception(
+            f"Failed to parse weekdays string '{to_parse}', error: {e}"
+        )
+
+
+def check_numerics(numerics: List[int], min: int, max: int) -> List[int]:
+    """Check that everything in the list is in bounds"""
+    s = sorted(numerics)
+
+    if s[0] < min or s[-1] > max:
+        raise Exception(
+            f"Out of bounds numbers in list {numerics}, min: {min}, max: {max}"
+        )
+
+    return s
 
 
 def parse_days(to_parse: str) -> List[int]:
@@ -171,38 +209,50 @@ def parse_days(to_parse: str) -> List[int]:
     - on day (X)
     - on day (1-n/n+1-z/X)
     - on the last day"""
-    # If the string to parse starts with "on", strip that out.
-    to_parse = to_parse.replace("on ", "")
+    try:
+        # If the string to parse starts with "on", strip that out.
+        to_parse = to_parse.replace("on ", "")
 
-    # If is "on the last day", just return [-1]
-    if to_parse == "the last day":
-        return [-1]
+        # If is "on the last day", just return [-1]
+        if to_parse == "the last day":
+            return [-1]
 
-    # Otherwise, we'll build a list of numeric values
-    numeric_values: List[int] = []
+        # Otherwise, we'll build a list of numeric values
+        numeric_values: List[int] = []
 
-    # Otherwise, if our string starts with "on day", we'll assume it's specifying numeric values
-    if to_parse.startswith("day"):
-        numeric_values = parse_numerics(to_parse[4:])
+        # Otherwise, if our string starts with "on day", we'll assume it's specifying numeric values
+        if to_parse.startswith("day"):
+            numeric_values = parse_numerics(to_parse[4:])
 
-    return numeric_values
+        return numeric_values
+    except Exception as e:
+        raise Exception(
+            f"Failed to parse days string '{to_parse}', error: {e}"
+        )
 
 
 def parse_numerics(to_parse: str) -> List[int]:
     """Parse a string containing numeric values and return a list of integers."""
-    # Split the string, and filter into ranges and values
-    parts = to_parse[4:].split("/")
-    ranges = list(filter(lambda s: "-" in s, parts))
+    try:
+        # Split the string, and filter into ranges and values
+        parts = to_parse.split("/")
+        ranges = list(filter(lambda s: "-" in s, parts))
 
-    # Immediately add any hardcoded numbers
-    numeric_values = [int(v) for v in filter(lambda s: "-" not in s, parts)]
+        # Immediately add any hardcoded numbers
+        numeric_values = [
+            int(v) for v in filter(lambda s: "-" not in s, parts)
+        ]
 
-    # Parse ranges and add them as well
-    for r in ranges:
-        i, n = [int(s) for s in r.split("-")]
-        numeric_values.extend(range(i, n + 1))
+        # Parse ranges and add them as well
+        for r in ranges:
+            i, n = [int(s) for s in r.split("-")]
+            numeric_values.extend(range(i, n + 1))
 
-    return sorted(numeric_values)
+        return sorted(numeric_values)
+    except Exception as e:
+        raise Exception(
+            f"Failed to parse numeric literal string: '{to_parse}', error: {e}"
+        )
 
 
 """
