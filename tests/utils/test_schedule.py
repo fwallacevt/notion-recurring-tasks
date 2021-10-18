@@ -37,8 +37,6 @@ def test_parse_frequency_and_interval():
     assert i == Interval.YEARS
     assert f == 4
 
-    # TODO(fwallace): Test that it throws if the string isn't correctly formatted
-
     # Check that it throws an exception if the interval isn't a known one
     with pytest.raises(
         Exception,
