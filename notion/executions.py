@@ -60,9 +60,7 @@ class Execution(RecordBase):
         self.mark_column_changed("name")
 
     @classmethod
-    def deserialize_values(
-        cls, values: Mapping[str, Any]
-    ) -> Mapping[str, Any]:
+    def deserialize_values(cls, values: Mapping[str, Any]) -> Mapping[str, Any]:
         new_values: Dict[str, Any] = {}
         if "Date created" in values:
             new_values["date_created"] = dateutil.parser.isoparse(
@@ -78,9 +76,7 @@ class Execution(RecordBase):
         if "name" in values:
             new_values["Name"] = {
                 "type": "title",
-                "title": [
-                    {"type": "text", "text": {"content": values["name"]}}
-                ],
+                "title": [{"type": "text", "text": {"content": values["name"]}}],
             }
         return new_values
 

@@ -7,17 +7,7 @@ lightweight, typed and asynchronous."""
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 from datetime import datetime, timezone
-from typing import (
-    Any,
-    Callable,
-    ClassVar,
-    List,
-    Mapping,
-    Optional,
-    Set,
-    Type,
-    TypeVar,
-)
+from typing import Any, Callable, ClassVar, List, Mapping, Optional, Set, Type, TypeVar
 
 from .notion_client import NotionClient
 
@@ -135,9 +125,7 @@ class RecordBase(metaclass=ABCMeta):
         if record is not None:
             return record
         else:
-            raise Exception(
-                f"cannot find {cls.__name__}. Filter: {str(filter)}"
-            )
+            raise Exception(f"cannot find {cls.__name__}. Filter: {str(filter)}")
 
     @classmethod
     def deserialize_values(
@@ -152,9 +140,7 @@ class RecordBase(metaclass=ABCMeta):
         return values
 
     @classmethod
-    def serialize_values(
-        cls: Type[T], values: Mapping[str, Any]
-    ) -> Mapping[str, Any]:
+    def serialize_values(cls: Type[T], values: Mapping[str, Any]) -> Mapping[str, Any]:
         """Serialize each value in `values` if necessary. We override this in
         generated subclasses."""
         return values
@@ -173,17 +159,13 @@ class RecordBase(metaclass=ABCMeta):
             return None
 
     @classmethod
-    def unpack_records(
-        cls: Type[T], records: List[Mapping[str, Any]]
-    ) -> List[T]:
+    def unpack_records(cls: Type[T], records: List[Mapping[str, Any]]) -> List[T]:
         typed: List[T] = []
         for mapping in records:
             # Hack around the type system long enough enough to call our derived
             # class constructor with the untyped mapping we got from SQLAlchemy.
             cls_untyped: Callable = cls
-            typed.append(
-                cls_untyped(**cls.deserialize_values(mapping["properties"]))
-            )
+            typed.append(cls_untyped(**cls.deserialize_values(mapping["properties"])))
 
         return typed
 

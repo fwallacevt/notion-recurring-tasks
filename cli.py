@@ -1,5 +1,6 @@
-from dotenv import load_dotenv
 import sys
+
+from dotenv import load_dotenv
 
 sys.path.append(".")
 

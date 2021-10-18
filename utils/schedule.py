@@ -24,13 +24,14 @@ There's also a time component (e.g. "at 9am")
 # - Specific value(s) ()
 
 import calendar
+import re
 from datetime import datetime
 from enum import Enum
-import re
 from typing import List, Optional, Tuple
+
 from croniter import croniter
 
-from notion import now_utc, Task
+from notion import Task, now_utc
 
 # Can I break these strings down into their components? They have an:
 #   - Interval
@@ -201,7 +202,7 @@ def parse_numerics(to_parse: str) -> List[int]:
         i, n = [int(s) for s in r.split("-")]
         numeric_values.extend(range(i, n + 1))
 
-    return numeric_values
+    return sorted(numeric_values)
 
 
 """

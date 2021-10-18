@@ -13,12 +13,13 @@ import sys
 
 sys.path.append("..")
 
-from abc import ABCMeta, abstractmethod
 import asyncio
-from os import environ, path
 import re
+from abc import ABCMeta, abstractmethod
+from os import environ, path
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
+from notion.notion_client import NotionClient
 from utils.naming import (
     enum_name_to_alias,
     property_name_to_column_name,
@@ -26,8 +27,6 @@ from utils.naming import (
     table_to_class_name,
 )
 from utils.serde import Deserializable
-
-from notion.notion_client import NotionClient
 
 
 class CustomCode:
@@ -63,8 +62,7 @@ class CustomCode:
                     re.DOTALL,
                 )
                 has_custom_status_type = (
-                    re.search("^class Status", source, re.MULTILINE)
-                    is not None
+                    re.search("^class Status", source, re.MULTILINE) is not None
                 )
                 if matches is not None:
                     return CustomCode(
@@ -540,9 +538,7 @@ class Table:
         optional_init_params = list(
             p for (p, has_default) in all_init_params if has_default
         )
-        init_params = "\n        ".join(
-            required_init_params + optional_init_params
-        )
+        init_params = "\n        ".join(required_init_params + optional_init_params)
 
         # Now build init assignments. We separate column assignments from foreign key assignments,
         # which are explicitly initialized to None.

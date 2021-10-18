@@ -1,5 +1,6 @@
 import json
 from typing import Any, Dict, List, Mapping, Optional
+
 import requests
 
 NOTION_API_URL = "https://api.notion.com/v1"

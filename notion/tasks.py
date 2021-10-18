@@ -172,9 +172,7 @@ class Task(RecordBase):
         self.mark_column_changed("name")
 
     @classmethod
-    def deserialize_values(
-        cls, values: Mapping[str, Any]
-    ) -> Mapping[str, Any]:
+    def deserialize_values(cls, values: Mapping[str, Any]) -> Mapping[str, Any]:
         new_values: Dict[str, Any] = {}
         if "Date created" in values:
             new_values["date_created"] = dateutil.parser.isoparse(
@@ -187,9 +185,7 @@ class Task(RecordBase):
                 enum_name_to_alias(values["Status"]["select"]["name"])
             ]
         if "Schedule" in values:
-            new_values["schedule"] = values["Schedule"]["rich_text"][0][
-                "plain_text"
-            ]
+            new_values["schedule"] = values["Schedule"]["rich_text"][0]["plain_text"]
         if "Priority" in values:
             new_values["priority"] = Priority[
                 enum_name_to_alias(values["Priority"]["select"]["name"])
@@ -249,9 +245,7 @@ class Task(RecordBase):
         if "name" in values:
             new_values["Name"] = {
                 "type": "title",
-                "title": [
-                    {"type": "text", "text": {"content": values["name"]}}
-                ],
+                "title": [{"type": "text", "text": {"content": values["name"]}}],
             }
         return new_values
 
