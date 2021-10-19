@@ -1,11 +1,16 @@
 """Test the schedule utility."""
 
+from datetime import datetime, time
+from dateutil.relativedelta import relativedelta
+from dateutil.tz.tz import tzlocal
 import pytest
 import re
 
 from utils.schedule import (
     Interval,
     StartFrom,
+    get_next,
+    get_next_due_date,
     handle_special_cases,
     parse_days,
     parse_frequency_and_interval,
@@ -109,6 +114,128 @@ def test_handle_special_cases():
     )
 
     assert handle_special_cases("Every 1 weeks") == "Every 1 weeks"
+
+
+def test_get_next_no_days():
+    """Test that we can get the next due date from an interval, frequency, and base."""
+    # Check that it works for an event happening every day (starting from today)
+    today = datetime.now(tzlocal()).replace(
+        hour=9, minute=30, second=0, microsecond=0
+    )
+    base_time = time(hour=9, minute=30)
+    base = datetime.now(tzlocal())
+
+    # ----------------- TEST DAYS ----------------- #
+    # Test that it works with days
+    d = get_next(base, Interval.DAYS, 1, base_time)
+    assert d == (today + relativedelta(days=1))
+
+    # We should still get the next future occurrence if our base is farther back in time
+    d = get_next(base - relativedelta(weeks=1), Interval.DAYS, 1, base_time)
+    assert d == (today + relativedelta(days=1))
+
+    # Test that it works if we adjust the frequency
+    d = get_next(base, Interval.DAYS, 2, base_time)
+    assert d == (today + relativedelta(days=2))
+
+    # And if our base changes...
+    d = get_next(base - relativedelta(days=1), Interval.DAYS, 2, base_time)
+    assert d == (today + relativedelta(days=1))
+
+    # ----------------- TEST WEEKS ----------------- #
+    # Test that it works with weeks
+    d = get_next(base, Interval.WEEKS, 1, base_time)
+    assert d == (today + relativedelta(weeks=1))
+
+    # We should still get the next future occurrence if our base is farther back in time
+    d = get_next(base - relativedelta(weeks=2), Interval.WEEKS, 1, base_time)
+    assert d == (today + relativedelta(weeks=1))
+
+    # Test that it works if we adjust the frequency
+    d = get_next(base, Interval.WEEKS, 2, base_time)
+    assert d == (today + relativedelta(weeks=2))
+
+    # And if our base changes...
+    d = get_next(base - relativedelta(weeks=1), Interval.WEEKS, 2, base_time)
+    assert d == (today + relativedelta(weeks=1))
+
+    # ----------------- TEST MONTHS ----------------- #
+    # Test that it works with months
+    d = get_next(base, Interval.MONTHS, 1, base_time)
+    assert d == (today + relativedelta(months=1))
+
+    # We should still get the next future occurrence if our base is farther back in time
+    d = get_next(base - relativedelta(months=2), Interval.MONTHS, 1, base_time)
+    assert d == (today + relativedelta(months=1))
+
+    # Test that it works if we adjust the frequency
+    d = get_next(base, Interval.MONTHS, 2, base_time)
+    assert d == (today + relativedelta(months=2))
+
+    # And if our base changes...
+    d = get_next(base - relativedelta(months=1), Interval.MONTHS, 2, base_time)
+    assert d == (today + relativedelta(months=1))
+
+    # ----------------- TEST YEARS ----------------- #
+    # Test that it works with years
+    d = get_next(base, Interval.YEARS, 1, base_time)
+    assert d == (today + relativedelta(years=1))
+
+    # We should still get the next future occurrence if our base is farther back in time
+    d = get_next(base - relativedelta(years=2), Interval.YEARS, 1, base_time)
+    assert d == (today + relativedelta(years=1))
+
+    # Test that it works if we adjust the frequency
+    d = get_next(base, Interval.YEARS, 2, base_time)
+    assert d == (today + relativedelta(years=2))
+
+    # And if our base changes...
+    d = get_next(base - relativedelta(years=1), Interval.YEARS, 2, base_time)
+    assert d == (today + relativedelta(years=1))
+
+
+def test_get_next_specific_days():
+    """Test that we can get the next due date from an interval, frequency, days, and base."""
+    today = datetime.now(tzlocal()).replace(
+        hour=9, minute=30, second=0, microsecond=0
+    )
+    base_time = time(hour=9, minute=30)
+
+    # Start from Monday
+    monday = today - relativedelta(days=today.weekday())
+    days = [today.weekday() - 1, today.weekday() + 1]
+
+    # ----------------- TEST DAYS ----------------- #
+    # Test that it works with days, if there is at least one remaining day this week
+    d = get_next(monday, Interval.WEEKS, 1, base_time, days)
+    assert d == (today + relativedelta(days=1))
+
+    # Test that it wraps to the next week, if applicable
+    d = get_next(today, Interval.WEEKS, 1, base_time, days[:1])
+    assert d == (monday + relativedelta(days=7 + days[0]))
+
+    # Test that it returns today, if today is one of the options and desired time hasn't
+    # passed yet
+    d = get_next(
+        today,
+        Interval.WEEKS,
+        1,
+        time(hour=23, minute=59),
+        [today.weekday()],
+    )
+    assert d == today.replace(hour=23, minute=59)
+
+    # Everything should operate the same if we go farther back in time
+    d = get_next(
+        monday - relativedelta(weeks=2), Interval.WEEKS, 1, base_time, days
+    )
+    assert d == (today + relativedelta(days=1))
+
+    # Test with a different frequency
+    d = get_next(
+        monday - relativedelta(weeks=2), Interval.WEEKS, 4, base_time, days
+    )
+    assert d == (today - relativedelta(days=1) + relativedelta(weeks=2))
 
 
 #   - Every (X) days (from due date/now)

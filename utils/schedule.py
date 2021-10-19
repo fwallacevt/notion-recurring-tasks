@@ -22,12 +22,12 @@ To implement:
 import calendar
 from croniter import croniter
 from enum import Enum
-from datetime import date, datetime, time, timedelta, tzinfo
+from datetime import date, datetime, time
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
 from dateutil.tz import tzlocal
 import re
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple
 
 from notion import Task, now_utc
 
@@ -178,7 +178,7 @@ def get_next(
     # Calculate elapsed times and how many days/weeks/months/years we would add, based
     # on frequency, for all possible intervals. This is very cheap, and means we can
     # handle cases generically below. To figure out how many (X) to add, we figure out
-    # how many periods we've missed (divide by frequency), and add one.
+    # how many periods we've missed (divide by frequency).
     elapsed_times = {
         "days": days_elapsed,
         "weeks": weeks_elapsed,
@@ -186,130 +186,96 @@ def get_next(
         "years": years_elapsed,
     }
     to_add = {
-        k: ((v // frequency) + 1) * frequency for k, v in elapsed_times.items()
+        k: (v // frequency) * frequency for k, v in elapsed_times.items()
     }
 
     if not days:
         next_due_date = next_due_date + relativedelta(
-            **{interval.name.lower(): to_add[interval.name.lower()]}
+            **{
+                interval.name.lower(): to_add[interval.name.lower()]
+                + frequency
+            }
         )
     else:
         # Otherwise, we have specific days that this is supposed to execute
-        # on.
-        #
-        # If today is an option, figure out if we've already passed the
-        # due time. If not, create it for today.
+        # on. Figure out when it would be due today, in local time, if it were
+        # to be due today.
         due_today_local = now.replace(
-            hour=at_time.hour, minute=at_time.minute, second=0
+            hour=at_time.hour, minute=at_time.minute, second=0, microsecond=0
         )
-        today_tuple = due_today_local.timetuple()
+
+        # If we have particular days, first figure out when the _latest_ it
+        # will be due is. This is the base + intervals to add + frequency.
+        latest_due = base + relativedelta(
+            **{
+                interval.name.lower(): to_add[interval.name.lower()]
+                + frequency
+            }
+        )
+
         if interval == Interval.WEEKS:
-            # For each day, check if that due date is greater than our base
-            weekday = today_tuple.tm_wday
-            # The _latest_ this will be due is (frequency) weeks from `base`, at the
-            # desired time.
-            latest_due = base + relativedelta(
-                weeks=to_add[interval.name.lower()]
-            )
-
-            print(
-                f"base: {base}, latest: {latest_due}, weekday: {weekday}, due today local: {due_today_local}"
-            )
-
-            for d in days:
-                if d < weekday:
-                    # If the desired day is less than the current weekday, go to the next
-                    # week we're interested in. For example, if the day we're interested
-                    # in is Tuesday (1), and it's currently Thursday (3), we need to add
-                    # 5 days: (7 + 1) - 3
-                    delta = relativedelta(
-                        days=(
-                            (7 * to_add[interval.name.lower()]) + d - weekday
-                        )
-                    )
-                    print(f"d > weekday")
-                elif d == weekday:
-                    # If it's today, we may or may not have passed the due time already.
-                    # If we haven't, set latest due to today at that time. Otherwise, go
-                    # to next week again.
-                    print(f"d = weekday")
-                    if due_today_local > now:
-                        # latest_due = due_today_local
-                        # break
-                        print("Still have time today?")
-                        delta = relativedelta(
-                            days=(7 * (to_add[interval.name.lower()] - 1))
-                        )
-                    else:
-                        print(
-                            f"to add: {to_add[interval.name.lower()]}, d: {d}, weekday: {weekday}"
-                        )
-                        delta = relativedelta(
-                            days=(
-                                (7 * to_add[interval.name.lower()])
-                                + d
-                                - weekday
-                            )
-                        )
-                else:
-                    # This day has yet to pass this week. Calculate the delta.
-                    delta = relativedelta(
-                        days=(7 * (to_add[interval.name.lower()] - 1))
-                        + (d - weekday)
-                    )
-
-                # If the next due date, on the specified day, is less than the current
-                # next due date, use that.
-                next_due_on_day = due_today_local + delta
-                print(
-                    f"day: {d}, delta: {delta}, next due: {next_due_on_day}, latest due: {latest_due}"
+            # Next, figure out which week we're comparing against. This is Monday of either
+            # this week, or the last week this schedule would have executed.
+            due_base_local = (
+                base.replace(
+                    hour=at_time.hour, minute=at_time.minute, second=0
                 )
-                if next_due_on_day < latest_due:
-                    latest_due = next_due_on_day
-
-            next_due_date = latest_due
+                - relativedelta(days=base.weekday())
+                + relativedelta(weeks=to_add[interval.name.lower()])
+            )
         elif interval == Interval.MONTHS:
-            pass
+            # Figure out which month we're comparing against. This is the first day
+            # of this month, or the last month this schedule may have executed in.
+            due_base_local = (
+                base.replace(
+                    hour=at_time.hour, minute=at_time.minute, second=0
+                )
+                - relativedelta(days=base.day)
+                + relativedelta(
+                    **{interval.name.lower(): to_add[interval.name.lower()]}
+                )
+            )
         elif interval == Interval.YEARS:
-            pass
+            # Figure out which year we're comparing against. This is the first day
+            # of this year, or the last year this schedule may have executed in.
+            due_base_local = base.replace(
+                hour=at_time.hour,
+                minute=at_time.minute,
+                second=0,
+                day=1,
+                month=1,
+            ) + relativedelta(
+                **{interval.name.lower(): to_add[interval.name.lower()]}
+            )
         else:
             # We shouldn't be able to get here, but let's be extra safe.
             raise Exception(
                 f"Can't get next due date with days {days}, base {base}, and interval {interval.name} - unknown interval"
             )
 
-        #
-        # If we have a time component, it's possible that the next due
-        # date is today at that time.
+        # Now that we have a base to work from, we can figure out when this would next
+        # be due on one of the days we're interested in.
+        for d in days:
+            # Then, for each of the days we're interested in, figure out when it would
+            # be due next, on that day (either this week, or `frequency` weeks in the
+            # future)
+            next_due_on_day = due_base_local + relativedelta(days=d)
+            if next_due_on_day < due_today_local:
+                next_due_on_day = next_due_on_day + relativedelta(
+                    **{interval.name.lower(): frequency}
+                )
+
+            # Finally, if the next date it's due on this day is less than the latest
+            # due date seen so far, set this as the latest due date.
+            if next_due_on_day < latest_due:
+                latest_due = next_due_on_day
+
+        next_due_date = latest_due
+
     # This is probably already done, but just be safe here.
     return next_due_date.replace(
         hour=at_time.hour, minute=at_time.minute, second=0, microsecond=0
     )
-
-    # If we have a time component, it's possible that the next due date is
-    # today at that time. Construct that time and compare to our base.
-    #
-    # If the base is already past that time, get the delta (days, weeks,
-    # months, or years), add it on to the given base, and return the datetime.
-
-    # Otherwise, we have specific days (and maybe times) that we're interested
-    # in.
-    #
-    # If it's on a weekly interval, and one of the days we want to execute on
-    # is today, repeat as above (construct datetime, compare to base). If there
-    # are no more days we're interested in this week (no days > current day),
-    # increment by one week, set the day to the first day in `self.days`, and
-    # time to desired time.
-    #
-    # If it's on a monthly interval, perform the same procedure (but looking
-    # until the end of the month).
-    #
-    # If it's on a yearly interval, again do the same.
-
-    # If we have a time component, make sure it's set on the object. Otherwise, zero
-    # everything out.
-
-    return
 
 
 def get_base(
