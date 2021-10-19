@@ -291,6 +291,7 @@ def get_base(
     #
     # If we don't have "start from", the base will depend on if specific days have been
     # asked for.
+    base: Optional[datetime] = None
     if start_from == StartFrom.COMPLETED_DATE:
         base = task.last_edited_time
     elif start_from == StartFrom.DUE_DATE:
