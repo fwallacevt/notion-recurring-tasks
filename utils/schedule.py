@@ -49,13 +49,13 @@ class Interval(Enum):
 
 
 WEEKDAYS = {
-    **{d.lower(): i for i, d in enumerate(calendar.day_name, start=0)},
-    **{d.lower(): i for i, d in enumerate(calendar.day_abbr, start=0)},
+    **{d.lower(): i for i, d in enumerate(calendar.day_name, start=1)},
+    **{d.lower(): i for i, d in enumerate(calendar.day_abbr, start=1)},
 }
 
 MONTHS = {
-    **{m.lower(): i for i, m in enumerate(calendar.month_name, start=0)},
-    **{m.lower(): i for i, m in enumerate(calendar.month_abbr, start=0)},
+    **{m.lower(): i for i, m in enumerate(calendar.month_name, start=1)},
+    **{m.lower(): i for i, m in enumerate(calendar.month_abbr, start=1)},
 }
 
 
@@ -235,6 +235,10 @@ def get_next(
                     **{interval.name.lower(): to_add[interval.name.lower()]}
                 )
             )
+
+            # Also, swap out -1 in the list, if applicable. Datetime knows how to handle
+            # adding months and adjusting the last day as necessary
+            # TODO(fwallace): Handle the last day of the month?
         elif interval == Interval.YEARS:
             # Figure out which year we're comparing against. This is the first day
             # of this year, or the last year this schedule may have executed in.
@@ -257,13 +261,37 @@ def get_next(
         # be due on one of the days we're interested in.
         for d in days:
             # Then, for each of the days we're interested in, figure out when it would
-            # be due next, on that day (either this week, or `frequency` weeks in the
-            # future)
-            next_due_on_day = due_base_local + relativedelta(days=d)
-            if next_due_on_day < due_today_local:
-                next_due_on_day = next_due_on_day + relativedelta(
-                    **{interval.name.lower(): frequency}
+            # be due next, on that day (either this interval, or `frequency` intervals
+            # in the future)
+            if d == -1:
+                # If we're looking for the last day of the month, find the last day and
+                # replace `due_base_local.day`
+                next_due_on_day = due_base_local.replace(
+                    day=calendar.monthrange(
+                        due_base_local.year, due_base_local.month
+                    )[-1]
                 )
+            else:
+                # We always subtract one because "day n" is an offset of n-1, etc. (since
+                # we're starting on day 1)
+                next_due_on_day = due_base_local + relativedelta(days=d - 1)
+            if next_due_on_day < due_today_local:
+                if d == -1:
+                    # If we're looking for the last day of the month, set that for the
+                    # next month. We do that by incrementing to the next month (in case
+                    # it's on a year boundary, we don't have to bother with that), and
+                    # replacing day with the last day of the month again
+                    next_due_on_day = next_due_on_day + relativedelta(days=1)
+                    next_due_on_day = next_due_on_day.replace(
+                        day=calendar.monthrange(
+                            next_due_on_day.year, next_due_on_day.month
+                        )[-1]
+                    )
+                else:
+                    # Otherwise, it's just incrementing days
+                    next_due_on_day = next_due_on_day + relativedelta(
+                        **{interval.name.lower(): frequency}
+                    )
 
             # Finally, if the next date it's due on this day is less than the latest
             # due date seen so far, set this as the latest due date.
@@ -325,9 +353,9 @@ def handle_special_cases(to_parse: str) -> str:
         - Every (Mon/Tue/Weds...) (at 9am)"""
     s = to_parse.lower()
     if s.startswith("every day"):
-        return s.replace("every day", "Every 1 weeks, on 0-6")
+        return s.replace("every day", "Every 1 weeks, on 1-7")
     elif s.startswith("every weekday"):
-        return s.replace("every weekday", "Every 1 weeks, on 0-4")
+        return s.replace("every weekday", "Every 1 weeks, on 1-5")
     elif any([s.startswith(f"every {k}") for k in WEEKDAYS]):
         # Otherwise, if it's every Mon/Tue/Weds, handle that...
         parts = s.split(",")
@@ -383,7 +411,7 @@ def parse_weekdays(to_parse: str) -> List[int]:
         # If we got some values from `parse_days`, then we can assume they
         # didn't specify weekdays as strings
         if len(numeric_values) > 0:
-            return check_numerics(numeric_values, 0, 6)
+            return check_numerics(numeric_values, 1, 7)
 
         # Otherwise, parse weekdays. We'll do this by turning them into a
         # numeric format compatible with `parse_days()` (replacing all weekday
@@ -409,7 +437,7 @@ def parse_weekdays(to_parse: str) -> List[int]:
             flags=re.IGNORECASE,
         )
 
-        return check_numerics(parse_numerics(to_parse), 0, 6)
+        return check_numerics(parse_numerics(to_parse), 1, 7)
     except Exception as e:
         raise Exception(
             f"Failed to parse weekdays string '{to_parse}', error: {e}"

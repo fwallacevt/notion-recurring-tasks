@@ -79,30 +79,30 @@ def test_parse_days():
 def test_parse_weekdays():
     """Unit test for `parse_days`."""
     assert parse_weekdays("on day 3") == [3]
-    assert parse_weekdays("on mon/tuesday") == [0, 1]
-    assert parse_weekdays("on MON-TUE/FRI-SAT") == [0, 1, 4, 5]
+    assert parse_weekdays("on mon/tuesday") == [1, 2]
+    assert parse_weekdays("on MON-TUE/FRI-SAT") == [1, 2, 5, 6]
 
     # Check that it throws an exception if we're asking for out of bounds days
     with pytest.raises(
         Exception,
         match=re.escape(
-            r"Failed to parse weekdays string 'day 7', error: Out of bounds numbers in list [7], min: 0, max: 6"
+            r"Failed to parse weekdays string 'day 8', error: Out of bounds numbers in list [8], min: 1, max: 7"
         ),
     ):
-        parse_weekdays("on day 7")
+        parse_weekdays("on day 8")
 
 
 def test_handle_special_cases():
     """Unit test `handle_special_cases`."""
-    assert handle_special_cases("Every day") == "Every 1 weeks, on 0-6"
+    assert handle_special_cases("Every day") == "Every 1 weeks, on 1-7"
     assert (
         handle_special_cases("Every day, at 9am")
-        == "Every 1 weeks, on 0-6, at 9am"
+        == "Every 1 weeks, on 1-7, at 9am"
     )
-    assert handle_special_cases("Every weekday") == "Every 1 weeks, on 0-4"
+    assert handle_special_cases("Every weekday") == "Every 1 weeks, on 1-5"
     assert (
         handle_special_cases("Every weekday, at 9am")
-        == "Every 1 weeks, on 0-4, at 9am"
+        == "Every 1 weeks, on 1-5, at 9am"
     )
     assert (
         handle_special_cases("Every saturday/sun")
@@ -203,7 +203,8 @@ def test_get_next_specific_days():
 
     # Start from Monday
     monday = today - relativedelta(days=today.weekday())
-    days = [today.weekday() - 1, today.weekday() + 1]
+    # Internally, we offset everything by 1, so account for that here
+    days = [today.weekday(), today.weekday() + 2]
 
     # ----------------- TEST DAYS ----------------- #
     # Test that it works with days, if there is at least one remaining day this week
@@ -212,7 +213,7 @@ def test_get_next_specific_days():
 
     # Test that it wraps to the next week, if applicable
     d = get_next(today, Interval.WEEKS, 1, base_time, days[:1])
-    assert d == (monday + relativedelta(days=7 + days[0]))
+    assert d == (monday + relativedelta(days=7 + days[0] - 1))
 
     # Test that it returns today, if today is one of the options and desired time hasn't
     # passed yet
@@ -221,7 +222,7 @@ def test_get_next_specific_days():
         Interval.WEEKS,
         1,
         time(hour=23, minute=59),
-        [today.weekday()],
+        [today.weekday() + 1],
     )
     assert d == today.replace(hour=23, minute=59)
 
@@ -236,6 +237,8 @@ def test_get_next_specific_days():
         monday - relativedelta(weeks=2), Interval.WEEKS, 4, base_time, days
     )
     assert d == (today - relativedelta(days=1) + relativedelta(weeks=2))
+
+    # ----------------- TEST MONTHS ----------------- #
 
 
 #   - Every (X) days (from due date/now)
