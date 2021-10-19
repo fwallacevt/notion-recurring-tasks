@@ -1,33 +1,30 @@
 """Functions to parse a schedule string. In its most basic form, a schedule
 will just be a Cron string. However, it may also be one of:
-  - Every (X) days (from due date/now)
-  - Every (day/weekday)
-  - Every (Mon/Tue/Weds...)
-  - Every (X) weeks on (monday/tuesday/wednesday/...)
-  - Every (X) months on the (X) day
-  - Every (X) months on the (first/last) day
-  - Every (X) months (from due date/now)
-  - Every (Jan/Feb/March...) on the (X) day
-  - Every (X) years 
-  - Every (X) years on the (X) day
-  - Every (X) years (from due date/now)
+    # If no day or from due date/completed date is specified, we will default to
+    # "from completed date"
+    - Every (X) days/weeks/months/years, (at 9am)
+    - Every (X) days/weeks/months/years, (from due date/completed date), (at 9am)
+    - Every (X) weeks, on (monday/tuesday/wednesday/...), (at 9am)
+    - Every (X) months, on the last day, (at 9am)
+    - Every (X) months/years, on day (X), (at 9am)
 
-There's also a time component (e.g. "at 9am")
-
-  - Every (X) months on the (first/second/third/fourth/fifth/last) (monday/tuesday/wednesday/...)
-  - Every (X) months on the (first/last) workday
+    - Every (day/weekday), (at 9am)
+    - Every (Mon/Tue/Weds...), (at 9am)
+    - Every (Jan/Feb/March...) on the (X) day
+    
+To implement:
+    - Every (X) months on the (first/second/third/fourth/fifth/last) (monday/tuesday/wednesday/...)
+    - Every (X) months on the (first/last) workday
+    - Every (Jan/Feb/March...) on the (X) day
 """
 
-# These have components of:
-# - interval (daily/weekly/monthly/yearly)
-# - frequency (every (X) interval)
-# - Specific value(s) ()
 
 import calendar
 import re
-from datetime import datetime
+from datetime import date, datetime, time, timedelta
+from dateutil.relativedelta import relativedelta
 from enum import Enum
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 from croniter import croniter
 
@@ -57,13 +54,13 @@ class Interval(Enum):
 
 
 WEEKDAYS = {
-    **{d.lower(): i for i, d in enumerate(calendar.day_name)},
-    **{d.lower(): i for i, d in enumerate(calendar.day_abbr)},
+    **{d.lower(): i for i, d in enumerate(calendar.day_name, start=0)},
+    **{d.lower(): i for i, d in enumerate(calendar.day_abbr, start=0)},
 }
 
 MONTHS = {
-    **{m.lower(): i for i, m in enumerate(calendar.month_name)},
-    **{m.lower(): i for i, m in enumerate(calendar.month_abbr)},
+    **{m.lower(): i for i, m in enumerate(calendar.month_name, start=0)},
+    **{m.lower(): i for i, m in enumerate(calendar.month_abbr, start=0)},
 }
 
 
@@ -74,19 +71,23 @@ class Schedule:
     # The frequency (e.g. "1", "2", etc. - how many intervals elapse between events)
     frequency: int
 
-    # Specific months, if specified. For example, "Jan" or "January"
-    months: Optional[List[str]]
+    # The base to begin from
+    base: datetime
 
     # Specific days of the week/month/year, as numbers (last is represented as -1)
     days: Optional[List[int]]
 
-    # When to start from, either the due date or completed date
-    start_from: Optional[StartFrom]
+    # Optional time that it's due (string)
+    time: Optional[str]
 
-    def __init__(self, schedule: str):
+    def __init__(self, task: Task):
         """Parse the schedule string and initialize with appropriate values."""
+        # If there is no schedule, we can't handle this
+        if task.schedule is None:
+            raise Exception(f"Task '{task.name}' has no schedule.")
+
         # Handle some special cases...
-        schedule = handle_special_cases(schedule)
+        schedule = handle_special_cases(task.schedule)
 
         # Handle the simple case of "Every (X) (interval)". Components are separated by
         # commas to make processing easier. Then, each piece is separated by a space.
@@ -100,27 +101,136 @@ class Schedule:
 
         # If there is more to parse, we expect to have _either_ a specification of starting
         # from due date/completed date, _or_ specific days this should be on
-        if len(components) > 1:
+        start_from: Optional[StartFrom] = None
+        for c in components[1:]:
             # Check if it's of the form "from due date/start"
-            s = components[1]
-            if s.startswith("from"):
-                self.start_from = parse_start_from(components[1])
-            else:
+            if c.startswith("from"):
+                start_from = parse_start_from(c)
+            elif c.startswith("on"):
                 # Parse this as a specific set of days.
                 if self.interval == Interval.DAYS:
-                    # "Every 3 days on Tuesday" doesn't make sense
+                    # "Every 3 days, on Tuesday" doesn't make sense
                     raise Exception(
-                        f"Schedules with intervals of 'days' cannot execute on specific days"
+                        f"Cannot process task '{task.name}' - schedules with intervals of 'days' cannot execute on specific days"
                     )
                 elif self.interval == Interval.WEEKS:
                     # Parse weekdays is a bit more general; it handles parsing day strings as well
                     # TODO(fwallace): Could I pass a dictionary of replacements here, make this more general?
-                    self.days = parse_weekdays(s)
+                    self.days = parse_weekdays(c)
                 else:
                     # Otherwise, we expect this to be a set of numeric days of the week/month/year
-                    self.days = parse_days(s)
+                    self.days = parse_days(c)
+            elif c.startswith("at"):
+                # We'll parse this into a datetime later - don't bother now
+                self.time = c[3:]
 
-        # TODO(fwallace): Finally, handle time (e.g. at 9am)
+        # Now, check some of our configuration and make sure the base is set appropriately.
+        # We set the base depending on `start_from`.
+        if self.days and start_from:
+            raise Exception(
+                f"Can't set both 'days' and whether to start from due date/completed date."
+            )
+
+        self.base = get_base(task, start_from, self.days)
+
+        # TODO(fwallace): Check configuration here?
+
+    def get_next(self) -> datetime:
+        """Get the next due date, starting from the given base."""
+
+        # TODO(fwallace): I have to make sure the base is in our local timezone, as well.
+        # If it's UTC, this might all get a bit mucked up (I could complete something is
+        # supposed to be daily after midnight UTC, and it will skip a day)
+        new_due_date = self.base
+        if not self.days:
+            # If we don't have any specific days, we simply increment the base
+            # by the desired interval * frequency.
+            if self.interval == Interval.DAYS:
+                new_due_date = new_due_date + relativedelta(
+                    days=self.frequency
+                )
+            elif self.interval == Interval.WEEKS:
+                new_due_date = new_due_date + relativedelta(
+                    weeks=self.frequency
+                )
+            elif self.interval == Interval.MONTHS:
+                new_due_date = new_due_date + relativedelta(
+                    months=self.frequency
+                )
+            else:
+                new_due_date = new_due_date + relativedelta(
+                    years=self.frequency
+                )
+        else:
+            # Otherwise, we have specific days that this is supposed to execute
+            # on.
+            #
+            # If we have a time component, it's possible that the next due
+            # date is today at that time.
+
+            pass
+
+        # If we have a time component, it's possible that the next due date is
+        # today at that time. Construct that time and compare to our base.
+        #
+        # If the base is already past that time, get the delta (days, weeks,
+        # months, or years), add it on to the given base, and return the datetime.
+
+        # Otherwise, we have specific days (and maybe times) that we're interested
+        # in.
+        #
+        # If it's on a weekly interval, and one of the days we want to execute on
+        # is today, repeat as above (construct datetime, compare to base). If there
+        # are no more days we're interested in this week (no days > current day),
+        # increment by one week, set the day to the first day in `self.days`, and
+        # time to desired time.
+        #
+        # If it's on a monthly interval, perform the same procedure (but looking
+        # until the end of the month).
+        #
+        # If it's on a yearly interval, again do the same.
+
+        # If we have a time component, make sure it's set on the object. Otherwise, zero
+        # everything out.
+
+        return
+
+
+def get_base(
+    task: Task, start_from: Optional[StartFrom], days: Optional[List[int]]
+) -> datetime:
+    """Get the base, given a task and an optional specification of when to start
+    from."""
+    # Figure out what the base time we want is. If we have "start from", it'll tell us
+    # to use one of the due date, or completed date. For now, `last_edited_time` will
+    # have to approximate completed date.
+    #
+    # If we don't have "start from", the base will depend on if specific days have been
+    # asked for.
+    if start_from == StartFrom.COMPLETED_DATE:
+        base = task.last_edited_time
+    elif start_from == StartFrom.DUE_DATE:
+        base = task.due_date
+    else:
+        if days is not None:
+            # If no specific days are specified, that means this looks like, for example,
+            # "Every 1 weeks". We default to using the completed time, unless told
+            # otherwise.
+            start_from = StartFrom.COMPLETED_DATE
+            base = task.last_edited_time
+        else:
+            # Otherwise, we have specific days this is supposed to execute on. Use
+            # the due date as the base (e.g. "Every 2 weeks, on Thursday" should
+            # start from its due date.)
+            start_from = StartFrom.DUE_DATE
+            base = task.due_date
+
+    if base is None:
+        raise Exception(
+            f"Cannot determine base for task '{task.name}' starting from {start_from.name}."
+        )
+
+    return base
 
 
 def handle_special_cases(to_parse: str) -> str:
@@ -285,20 +395,6 @@ def parse_numerics(to_parse: str) -> List[int]:
         )
 
 
-"""
-    - Every (X) days/weeks/months/years (will default to from completed date)
-    - Every (X) days/weeks/months/years (from due date/completed date)
-    - Every (X) weeks on (monday/tuesday/wednesday/...)
-    - Every (X) months on the last day
-    - Every (X) months/years on day (X)
-
-    - Every (day/weekday)
-    - Every (Mon/Tue/Weds...)
-    - Every (Jan/Feb/March...) on the (X) day
-
-There's also a time component (e.g. "at 9am")"""
-
-
 def process_schedule_str(schedule: str) -> datetime:
     """Process a schedule string, split into its components, and return the next
     due date."""
@@ -310,7 +406,7 @@ def get_next_due_date(task: Task) -> datetime:
     """Given a task, figure out what its next due date will be based on its schedule."""
     base = now_utc()
     if task.schedule is None:
-        raise Exception(f"Task {task.name} has no schedule")
+        raise Exception(f"Task '{task.name}' has no schedule")
 
     # Check if it's an expression that croniter can handle, or if we need to process
     # ourselves.
@@ -318,3 +414,7 @@ def get_next_due_date(task: Task) -> datetime:
         # croniter's got this
         iter = croniter(task.schedule, base)
         return iter.get_next(datetime)
+
+
+# TODO(fwallace): Confirm that this will confirm a due date _in local time_
+# TODO(fwallace): Confirm that this will set the due date in notion _in local time_
