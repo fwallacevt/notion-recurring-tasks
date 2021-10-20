@@ -239,6 +239,81 @@ def test_get_next_specific_days():
     assert d == (today - relativedelta(days=1) + relativedelta(weeks=2))
 
     # ----------------- TEST MONTHS ----------------- #
+    # Test that it works with months, if there is at least one remaining day this month
+    days = [today.day - 1, today.day + 1]
+    d = get_next(today, Interval.MONTHS, 2, base_time, days)
+    assert d == (today + relativedelta(days=1))
+
+    # Test that it wraps to the next month, if applicable
+    d = get_next(today, Interval.MONTHS, 1, base_time, days[:1])
+    assert d == (today + relativedelta(days=-1, months=1))
+
+    # Test that it returns today, if today is one of the options and desired time hasn't
+    # passed yet
+    d = get_next(
+        today,
+        Interval.MONTHS,
+        1,
+        time(hour=23, minute=59),
+        [today.day],
+    )
+    assert d == today.replace(hour=23, minute=59)
+
+    # Everything should operate the same if we go farther back in time
+    d = get_next(
+        today - relativedelta(months=2), Interval.MONTHS, 1, base_time, days
+    )
+    assert d == (today + relativedelta(days=1))
+
+    # Test with a different frequency
+    d = get_next(
+        today - relativedelta(months=2), Interval.MONTHS, 4, base_time, days
+    )
+    assert d == (today + relativedelta(days=-1, months=2))
+
+    # ----------------- TEST YEARS ----------------- #
+    # Test that it works with years, if there is at least one remaining day this year
+    day_of_year = today.timetuple().tm_yday
+    days = [day_of_year - 1, day_of_year + 1]
+    d = get_next(today, Interval.YEARS, 2, base_time, days)
+    assert d == (today + relativedelta(days=1))
+
+    # Test that it wraps to the next year, if applicable
+    d = get_next(today, Interval.YEARS, 1, base_time, days[:1])
+    assert d == (today + relativedelta(days=-1, years=1))
+
+    # Test that it returns today, if today is one of the options and desired time hasn't
+    # passed yet
+    d = get_next(
+        today,
+        Interval.YEARS,
+        1,
+        time(hour=23, minute=59),
+        [day_of_year],
+    )
+    assert d == today.replace(hour=23, minute=59)
+
+    # Everything should operate the same if we go farther back in time
+    d = get_next(
+        today - relativedelta(years=2), Interval.YEARS, 1, base_time, days
+    )
+    assert d == (today + relativedelta(days=1))
+
+    # Test with a different frequency
+    d = get_next(
+        today - relativedelta(years=2), Interval.YEARS, 4, base_time, days
+    )
+    assert d == (today + relativedelta(days=-1, years=2))
+
+
+def test_schedule_parses_task():
+    """Test that the schedule class unpacks our Task object correctly."""
+    pass
+
+
+def test_get_next_due_date():
+    """Test that we get the next expected due date."""
+    pass
 
 
 #   - Every (X) days (from due date/now)
