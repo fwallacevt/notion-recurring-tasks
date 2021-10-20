@@ -27,4 +27,5 @@
 - [ ] Sync with Asana (tasks assigned in Asana get copied over)
 - [ ] Flesh out README/documentation
   - [ ] Add a badge?
+  - [ ] Add a code coverage badge (and ignore notion/ for coverage)
 - [ ] Post on Reddit?
