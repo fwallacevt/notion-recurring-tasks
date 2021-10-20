@@ -29,8 +29,12 @@ def create_new_recurring_tasks(client: NotionClient, tasks: List[Task]):
         # correctly
         # TODO(fwallace): When I'm formatting the due date, I should remove the time
         # component if it's all zeroes.
-        # TODO(fwallace): Confirm that this will confirm a due date _in local time_
-        # TODO(fwallace): Confirm that this will set the due date in notion _in local time_
+        # TODO(fwallace): Confirm that this will confirm a due date _in local time_ (make sure that
+        # timestamps on the objects are parsed as UTC or local time, consistently)
+        # TODO(fwallace): Confirm that this will set the due date in notion _in local time_ (make sure
+        # that due dates are set as local time)
+        # TODO(fwallace): What will local time look like if we're running on GitHub runners? How
+        # do we know what local time zone is?
         next_due = get_next_due_date(t)
         t.due_date = next_due.astimezone(ZoneInfo("EST"))
         t.done = False
