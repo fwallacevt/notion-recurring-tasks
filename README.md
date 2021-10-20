@@ -23,9 +23,11 @@
   - [x] Test schedule utility
 - [x] Make schedule attributes read only
 - [ ] Run tests on PRs
-- [ ] Sync with Google calendar
-- [ ] Sync with Asana (tasks assigned in Asana get copied over)
+- [ ] Lots of logging
+- [ ] Resolve todos
 - [ ] Flesh out README/documentation
   - [ ] Add a badge?
   - [ ] Add a code coverage badge (and ignore notion/ for coverage)
+- [ ] Sync with Google calendar
+- [ ] Sync with Asana (tasks assigned in Asana get copied over)
 - [ ] Post on Reddit?
