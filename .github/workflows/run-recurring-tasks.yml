@@ -1,4 +1,4 @@
-name: handle-recurring-tasks
+name: run-recurring-tasks
 
 on:
   workflow_dispatch:
