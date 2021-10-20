@@ -182,13 +182,10 @@ def get_next(
 ) -> datetime:
     """Get the next due date, starting from the given base."""
 
-    # TODO(fwallace): I have to make sure the base is in our local timezone, as well.
-    # If it's UTC, this might all get a bit mucked up (I could complete something that's
-    # supposed to be daily after midnight UTC, and it will skip a day)
     # TODO(fwallace): How do we deal with the desired time (e.g. if I have a task every
     # day at 9am, and I completed it today at 1am, how do I ensure it is recreated for
     # 9am today?) Do I replace hour + minute, and check if the base is < that (e.g.)
-    # First, let's make sure
+    # Make sure we're working with everything as local time
     next_due_date = base.astimezone()
     now = datetime.now().astimezone()
 
@@ -558,9 +555,3 @@ def get_next_due_date(task: Task) -> datetime:
         # Process with the schedule utility
         schedule = Schedule(task)
         return schedule.get_next()
-
-
-# TODO(fwallace): When I'm formatting the due date, I should remove the time
-# component if it's all zeroes.
-# TODO(fwallace): Confirm that this will confirm a due date _in local time_
-# TODO(fwallace): Confirm that this will set the due date in notion _in local time_

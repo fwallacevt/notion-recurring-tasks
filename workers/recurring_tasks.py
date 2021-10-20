@@ -27,6 +27,10 @@ def create_new_recurring_tasks(client: NotionClient, tasks: List[Task]):
 
         # Get the next due date, then make sure that we convert to EST so that Notion will display
         # correctly
+        # TODO(fwallace): When I'm formatting the due date, I should remove the time
+        # component if it's all zeroes.
+        # TODO(fwallace): Confirm that this will confirm a due date _in local time_
+        # TODO(fwallace): Confirm that this will set the due date in notion _in local time_
         next_due = get_next_due_date(t)
         t.due_date = next_due.astimezone(ZoneInfo("EST"))
         t.done = False
