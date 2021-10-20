@@ -26,9 +26,7 @@ try:
     pipenv_run("isort", "--version")
     pipenv_run("check")
 except Exception as e:
-    print(
-        "Failed formatting check; please run 'pipenv run format' and re-commit"
-    )
+    print("Failed formatting check; please run 'pipenv run format' and re-commit")
     raise e
 
 

@@ -18,14 +18,15 @@ To implement:
 
 
 import calendar
-from croniter import croniter
-from enum import Enum
+import re
 from datetime import datetime, time
+from enum import Enum
+from typing import List, Optional, Tuple
+
+from croniter import croniter
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
 from dateutil.tz import tzlocal
-import re
-from typing import List, Optional, Tuple
 
 from notion import Task, now_utc
 
@@ -141,9 +142,7 @@ class Schedule:
                     # Otherwise, we expect this to be a set of numeric days of the week/month/year
                     self._days = parse_days(c)
             elif c.startswith("at"):
-                today_at_desired_time = parser.parse(c[3:]).replace(
-                    tzinfo=tzlocal()
-                )
+                today_at_desired_time = parser.parse(c[3:]).replace(tzinfo=tzlocal())
 
         # Now, check some of our configuration and make sure the base is set appropriately.
         # We set the base depending on `start_from`.
@@ -212,15 +211,12 @@ def get_next(
         "months": months_elapsed,
         "years": years_elapsed,
     }
-    to_add = {
-        k: (v // frequency) * frequency for k, v in elapsed_times.items()
-    }
+    to_add = {k: (v // frequency) * frequency for k, v in elapsed_times.items()}
 
     if not days:
         next_due_date = next_due_date + relativedelta(
             **{
-                interval.name.lower(): to_add[interval.name.lower()]
-                + frequency
+                interval.name.lower(): to_add[interval.name.lower()] + frequency
             }  # type: ignore
         )
     else:
@@ -228,21 +224,31 @@ def get_next(
         # on.
 
         # If we have particular days, first figure out when the _latest_ it
-        # will be due is. This is the base + intervals to add + frequency.
+        # will be due is. This is the base + intervals to add + frequency + offset
         latest_due = base + relativedelta(
             **{
-                interval.name.lower(): to_add[interval.name.lower()]
-                + frequency
+                interval.name.lower(): to_add[interval.name.lower()] + frequency
             }  # type: ignore
         )
+
+        # Also factor in the first day this may execute on. Offset is the first day - 1
+        # if that's non negative, or the last day of the month. For example, if days is
+        # [5, 10], interval is monthly, and frequency is 1, we don't want to say the latest
+        # this could be due is next month on the first, because that's not correct. The
+        # correct latest due date would be _*next month on the 5th*_. That is what we're
+        # accounting for here.
+        offset = (
+            days[0] - 1
+            if days[0] != -1
+            else calendar.monthrange(latest_due.year, latest_due.month)[-1]
+        )
+        latest_due = latest_due + relativedelta(days=offset)
 
         if interval == Interval.WEEKS:
             # Next, figure out which week we're comparing against. This is Monday of either
             # this week, or the last week this schedule would have executed.
             due_base_local = (
-                base.replace(
-                    hour=at_time.hour, minute=at_time.minute, second=0
-                )
+                base.replace(hour=at_time.hour, minute=at_time.minute, second=0)
                 - relativedelta(days=base.weekday())
                 + relativedelta(weeks=to_add[interval.name.lower()])
             )
@@ -273,6 +279,11 @@ def get_next(
                 f"Can't get next due date with days {days}, base {base}, and interval {interval.name} - unknown interval"
             )
 
+        # TODO(fwallace): Logging
+        # print(
+        #     f"latest_due: {latest_due}, due_base_local: {due_base_local}, days: {days}"
+        # )
+
         # Now that we have a base to work from, we can figure out when this would next
         # be due on one of the days we're interested in.
         for d in days:
@@ -283,9 +294,9 @@ def get_next(
                 # If we're looking for the last day of the month, find the last day and
                 # replace `due_base_local.day`
                 next_due_on_day = due_base_local.replace(
-                    day=calendar.monthrange(
-                        due_base_local.year, due_base_local.month
-                    )[-1]
+                    day=calendar.monthrange(due_base_local.year, due_base_local.month)[
+                        -1
+                    ]
                 )
             else:
                 # We always subtract one because "day n" is an offset of n-1, etc. (since
@@ -410,9 +421,7 @@ def parse_start_from(to_parse: str) -> StartFrom:
     except KeyError:
         raise Exception(f"No known start from {to_parse[5:]}")
     except Exception as e:
-        raise Exception(
-            f"Failed to parse start from string '{to_parse}', error: {e}"
-        )
+        raise Exception(f"Failed to parse start from string '{to_parse}', error: {e}")
 
 
 def parse_weekdays(to_parse: str) -> List[int]:
@@ -456,9 +465,7 @@ def parse_weekdays(to_parse: str) -> List[int]:
 
         return check_numerics(parse_numerics(to_parse), 1, 7)
     except Exception as e:
-        raise Exception(
-            f"Failed to parse weekdays string '{to_parse}', error: {e}"
-        )
+        raise Exception(f"Failed to parse weekdays string '{to_parse}', error: {e}")
 
 
 def check_numerics(numerics: List[int], min: int, max: int) -> List[int]:
@@ -496,9 +503,7 @@ def parse_days(to_parse: str) -> List[int]:
 
         return numeric_values
     except Exception as e:
-        raise Exception(
-            f"Failed to parse days string '{to_parse}', error: {e}"
-        )
+        raise Exception(f"Failed to parse days string '{to_parse}', error: {e}")
 
 
 def parse_numerics(to_parse: str) -> List[int]:
@@ -509,9 +514,7 @@ def parse_numerics(to_parse: str) -> List[int]:
         ranges = list(filter(lambda s: "-" in s, parts))
 
         # Immediately add any hardcoded numbers
-        numeric_values = [
-            int(v) for v in filter(lambda s: "-" not in s, parts)
-        ]
+        numeric_values = [int(v) for v in filter(lambda s: "-" not in s, parts)]
 
         # Parse ranges and add them as well
         for r in ranges:
