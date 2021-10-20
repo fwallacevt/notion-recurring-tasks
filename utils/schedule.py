@@ -225,7 +225,7 @@ def get_next(
             **{
                 interval.name.lower(): to_add[interval.name.lower()]
                 + frequency
-            }
+            }  # type: ignore
         )
     else:
         # Otherwise, we have specific days that this is supposed to execute
@@ -241,7 +241,7 @@ def get_next(
             **{
                 interval.name.lower(): to_add[interval.name.lower()]
                 + frequency
-            }
+            }  # type: ignore
         )
 
         if interval == Interval.WEEKS:
@@ -260,7 +260,7 @@ def get_next(
             due_base_local = base.replace(
                 hour=at_time.hour, minute=at_time.minute, second=0, day=1
             ) + relativedelta(
-                **{interval.name.lower(): to_add[interval.name.lower()]}
+                **{interval.name.lower(): to_add[interval.name.lower()]}  # type: ignore
             )
             print(f"Due base local: {due_base_local}")
         elif interval == Interval.YEARS:
@@ -273,7 +273,7 @@ def get_next(
                 day=1,
                 month=1,
             ) + relativedelta(
-                **{interval.name.lower(): to_add[interval.name.lower()]}
+                **{interval.name.lower(): to_add[interval.name.lower()]}  # type: ignore
             )
         else:
             # We shouldn't be able to get here, but let's be extra safe.
@@ -314,7 +314,7 @@ def get_next(
                 else:
                     # Otherwise, it's just incrementing days
                     next_due_on_day = next_due_on_day + relativedelta(
-                        **{interval.name.lower(): frequency}
+                        **{interval.name.lower(): frequency}  # type: ignore
                     )
 
             print(f"Day: {d}, next_due_on_day: {next_due_on_day}")
