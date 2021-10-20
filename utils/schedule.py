@@ -22,7 +22,7 @@ To implement:
 import calendar
 from croniter import croniter
 from enum import Enum
-from datetime import date, datetime, time
+from datetime import datetime, time
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
 from dateutil.tz import tzlocal
@@ -61,19 +61,39 @@ MONTHS = {
 
 class Schedule:
     # The interval (can be one of "days", "weeks", "months", "years")
-    interval: Interval
+    _interval: Interval
 
     # The frequency (e.g. "1", "2", etc. - how many intervals elapse between events)
-    frequency: int
+    _frequency: int
 
     # The base to begin from
-    base: datetime
+    _base: datetime
 
     # Time that it's due
-    at_time: time
+    _at_time: time
 
     # Specific days of the week/month/year, as numbers (last is represented as -1)
-    days: Optional[List[int]]
+    _days: Optional[List[int]]
+
+    @property
+    def interval(self) -> Interval:
+        return self._interval
+
+    @property
+    def frequency(self) -> int:
+        return self._frequency
+
+    @property
+    def base(self) -> datetime:
+        return self._base
+
+    @property
+    def at_time(self) -> time:
+        return self._at_time
+
+    @property
+    def days(self) -> Optional[List[int]]:
+        return self._days
 
     def __init__(self, task: Task):
         """Parse the schedule string and initialize with appropriate values."""
@@ -82,7 +102,7 @@ class Schedule:
             raise Exception(f"Task '{task.name}' has no schedule.")
 
         # Make sure that days is initialized
-        self.days = None
+        self._days = None
 
         # Handle some special cases...
         schedule = handle_special_cases(task.schedule)
@@ -94,8 +114,8 @@ class Schedule:
         # We should always have a frequency and interval component, e.g.
         # "Every (frequency) (interval)"
         interval, frequency = parse_frequency_and_interval(components[0])
-        self.interval = interval
-        self.frequency = frequency
+        self._interval = interval
+        self._frequency = frequency
 
         # If there is more to parse, we expect to have _either_ a specification of starting
         # from due date/completed date, _or_ specific days this should be on, and maybe
@@ -110,18 +130,18 @@ class Schedule:
                 start_from = parse_start_from(c)
             elif c.startswith("on"):
                 # Parse this as a specific set of days.
-                if self.interval == Interval.DAYS:
+                if self._interval == Interval.DAYS:
                     # "Every 3 days, on Tuesday" doesn't make sense
                     raise Exception(
                         f"Cannot process task '{task.name}' - schedules with intervals of 'days' cannot execute on specific days"
                     )
-                elif self.interval == Interval.WEEKS:
+                elif self._interval == Interval.WEEKS:
                     # Parse weekdays is a bit more general; it handles parsing day strings as well
                     # TODO(fwallace): Could I pass a dictionary of replacements here, make this more general?
-                    self.days = parse_weekdays(c)
+                    self._days = parse_weekdays(c)
                 else:
                     # Otherwise, we expect this to be a set of numeric days of the week/month/year
-                    self.days = parse_days(c)
+                    self._days = parse_days(c)
             elif c.startswith("at"):
                 today_at_desired_time = parser.parse(c[3:]).replace(
                     tzinfo=tzlocal()
@@ -129,14 +149,14 @@ class Schedule:
 
         # Now, check some of our configuration and make sure the base is set appropriately.
         # We set the base depending on `start_from`.
-        if self.days and start_from:
+        if self._days and start_from:
             raise Exception(
                 f"Can't set both 'days' and whether to start from due date/completed date."
             )
 
-        self.base = get_base(task, start_from, self.days)
+        self._base = get_base(task, start_from, self._days)
 
-        self.at_time = time(
+        self._at_time = time(
             hour=today_at_desired_time.hour,
             minute=today_at_desired_time.minute,
             tzinfo=today_at_desired_time.tzinfo,
@@ -145,7 +165,11 @@ class Schedule:
     def get_next(self):
         """Get the next due date for this schedule."""
         return get_next(
-            self.base, self.interval, self.frequency, self.at_time, self.days
+            self._base,
+            self._interval,
+            self._frequency,
+            self._at_time,
+            self._days,
         )
 
 
@@ -233,15 +257,12 @@ def get_next(
         elif interval == Interval.MONTHS:
             # Figure out which month we're comparing against. This is the first day
             # of this month, or the last month this schedule may have executed in.
-            due_base_local = (
-                base.replace(
-                    hour=at_time.hour, minute=at_time.minute, second=0
-                )
-                - relativedelta(days=base.day)
-                + relativedelta(
-                    **{interval.name.lower(): to_add[interval.name.lower()]}
-                )
+            due_base_local = base.replace(
+                hour=at_time.hour, minute=at_time.minute, second=0, day=1
+            ) + relativedelta(
+                **{interval.name.lower(): to_add[interval.name.lower()]}
             )
+            print(f"Due base local: {due_base_local}")
         elif interval == Interval.YEARS:
             # Figure out which year we're comparing against. This is the first day
             # of this year, or the last year this schedule may have executed in.
@@ -295,6 +316,8 @@ def get_next(
                     next_due_on_day = next_due_on_day + relativedelta(
                         **{interval.name.lower(): frequency}
                     )
+
+            print(f"Day: {d}, next_due_on_day: {next_due_on_day}")
 
             # Finally, if the next date it's due on this day is less than the latest
             # due date seen so far, set this as the latest due date.
@@ -529,16 +552,14 @@ def get_next_due_date(task: Task) -> datetime:
     if croniter.is_valid(task.schedule):
         # croniter's got this
         iter = croniter(task.schedule, base)
-        ret = iter.get_next(datetime)
+        return iter.get_next(datetime)
     else:
         # Process with the schedule utility
         schedule = Schedule(task)
-        ret = schedule.get_next()
-
-    # Now, strip the time component if it's all 0s
-    # TODO(fwallace): When I'm formatting the due date, I should remove the time
-    # component if it's all zeroes.
+        return schedule.get_next()
 
 
+# TODO(fwallace): When I'm formatting the due date, I should remove the time
+# component if it's all zeroes.
 # TODO(fwallace): Confirm that this will confirm a due date _in local time_
 # TODO(fwallace): Confirm that this will set the due date in notion _in local time_
