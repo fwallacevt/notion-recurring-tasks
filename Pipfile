@@ -12,8 +12,8 @@ verify_ssl = true
 # https://github.com/pypa/pipenv/issues/2160 for discussion of why. Basically, pipenv recognizes everything as one
 # "command", which isn't right.
 install_dev = "bash -c \"pip install black && pipenv install -d && pipenv install\""
-format = "bash -c \"isort --profile black . && black .\""
-check = "bash -c \"isort --profile black --check . && black --check . \""
+format = "bash -c \"isort --profile black --skip-glob 'notion/*' . && black .\""
+check = "bash -c \"isort --profile black --skip-glob 'notion/*' --check . && black --check . \""
 
 [dev-packages]
 black = "*"

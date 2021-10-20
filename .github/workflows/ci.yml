@@ -1,0 +1,45 @@
+# Workflow for testing our code regularly
+name: CI for Notion applications
+
+# Controls when the action will run.
+on:
+  push:
+    # Only run if these paths change.
+    paths:
+      - notion/**
+      - workers/**
+      - utils/**
+    # Only run on the master branch.
+    branches: [master]
+  pull_request:
+    # Only run if these paths change.
+    paths:
+      - ".github/workflows/ci.yml"
+      - notion/**
+      - workers/**
+      - utils/**
+    # Only run on the master branch.
+    branches: [master]
+
+  # Test our various workers.
+  test_workers:
+    build:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout repo content
+          uses: actions/checkout@v2 # checkout the repository content to github runner
+
+        - name: setup python
+          uses: actions/setup-python@v2
+          with:
+            python-version: "3.10.0"
+
+        - name: Install pipenv
+          run: |
+            pip install pipenv
+
+        - name: Install python dev packages
+          run: pipenv install -d
+
+        - name: Run ci
+          run: pipenv run python ci_helper.py
