@@ -81,6 +81,9 @@ class Schedule:
         if task.schedule is None:
             raise Exception(f"Task '{task.name}' has no schedule.")
 
+        # Make sure that days is initialized
+        self.days = None
+
         # Handle some special cases...
         schedule = handle_special_cases(task.schedule)
 
@@ -139,6 +142,12 @@ class Schedule:
             tzinfo=today_at_desired_time.tzinfo,
         )
 
+    def get_next(self):
+        """Get the next due date for this schedule."""
+        return get_next(
+            self.base, self.interval, self.frequency, self.at_time, self.days
+        )
+
 
 def get_next(
     base: datetime,
@@ -152,8 +161,6 @@ def get_next(
     # TODO(fwallace): I have to make sure the base is in our local timezone, as well.
     # If it's UTC, this might all get a bit mucked up (I could complete something that's
     # supposed to be daily after midnight UTC, and it will skip a day)
-    # TODO(fwallace): When I'm formatting the due date, I should remove the time
-    # component if it's all zeroes.
     # TODO(fwallace): How do we deal with the desired time (e.g. if I have a task every
     # day at 9am, and I completed it today at 1am, how do I ensure it is recreated for
     # 9am today?) Do I replace hour + minute, and check if the base is < that (e.g. )
@@ -235,10 +242,6 @@ def get_next(
                     **{interval.name.lower(): to_add[interval.name.lower()]}
                 )
             )
-
-            # Also, swap out -1 in the list, if applicable. Datetime knows how to handle
-            # adding months and adjusting the last day as necessary
-            # TODO(fwallace): Handle the last day of the month?
         elif interval == Interval.YEARS:
             # Figure out which year we're comparing against. This is the first day
             # of this year, or the last year this schedule may have executed in.
@@ -526,7 +529,15 @@ def get_next_due_date(task: Task) -> datetime:
     if croniter.is_valid(task.schedule):
         # croniter's got this
         iter = croniter(task.schedule, base)
-        return iter.get_next(datetime)
+        ret = iter.get_next(datetime)
+    else:
+        # Process with the schedule utility
+        schedule = Schedule(task)
+        ret = schedule.get_next()
+
+    # Now, strip the time component if it's all 0s
+    # TODO(fwallace): When I'm formatting the due date, I should remove the time
+    # component if it's all zeroes.
 
 
 # TODO(fwallace): Confirm that this will confirm a due date _in local time_
