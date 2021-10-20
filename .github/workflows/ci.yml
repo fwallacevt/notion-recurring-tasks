@@ -21,6 +21,7 @@ on:
     # Only run on the main branch.
     branches: [main]
 
+jobs:
   # Test our various workers.
   test_workers:
     build:
