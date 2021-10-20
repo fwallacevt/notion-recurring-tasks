@@ -22,7 +22,7 @@
 - [x] Add tests
   - [x] Test schedule utility
 - [x] Make schedule attributes read only
-- [ ] Run tests on PRs
+- [x] Run tests on PRs
 - [ ] Lots of logging
 - [ ] Resolve todos
 - [ ] Flesh out README/documentation
