@@ -24,23 +24,22 @@ on:
 jobs:
   # Test our various workers.
   test_workers:
-    build:
-      runs-on: ubuntu-latest
-      steps:
-        - name: Checkout repo content
-          uses: actions/checkout@v2 # checkout the repository content to github runner
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo content
+        uses: actions/checkout@v2 # checkout the repository content to github runner
 
-        - name: setup python
-          uses: actions/setup-python@v2
-          with:
-            python-version: "3.10.0"
+      - name: setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10.0"
 
-        - name: Install pipenv
-          run: |
-            pip install pipenv
+      - name: Install pipenv
+        run: |
+          pip install pipenv
 
-        - name: Install python dev packages
-          run: pipenv install -d
+      - name: Install python dev packages
+        run: pipenv install -d
 
-        - name: Run ci
-          run: pipenv run python ci_helper.py
+      - name: Run ci
+        run: pipenv run python ci_helper.py
