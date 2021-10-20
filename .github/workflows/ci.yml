@@ -26,9 +26,7 @@ jobs:
   test_workers:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo content
-        uses: actions/checkout@v2 # checkout the repository content to github runner
-
+      - uses: actions/checkout@v2
       - name: setup python
         uses: actions/setup-python@v2
         with:
