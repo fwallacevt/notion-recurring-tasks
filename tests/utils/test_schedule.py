@@ -1,13 +1,14 @@
 """Test the schedule utility."""
 
+import re
 from datetime import datetime, time
+
+import pytest
 from dateutil.relativedelta import relativedelta
 from dateutil.tz.tz import tzlocal
+
 from notion.orm import now_utc
 from notion.tasks import Task
-import pytest
-import re
-
 from utils.schedule import (
     Interval,
     Schedule,
@@ -101,12 +102,10 @@ def test_handle_special_cases():
     assert handle_special_cases("Every day, at 9am") == "Every 1 days, at 9am"
     assert handle_special_cases("Every weekday") == "Every 1 weeks, on 1-5"
     assert (
-        handle_special_cases("Every weekday, at 9am")
-        == "Every 1 weeks, on 1-5, at 9am"
+        handle_special_cases("Every weekday, at 9am") == "Every 1 weeks, on 1-5, at 9am"
     )
     assert (
-        handle_special_cases("Every saturday/sun")
-        == "Every 1 weeks, on saturday/sun"
+        handle_special_cases("Every saturday/sun") == "Every 1 weeks, on saturday/sun"
     )
     assert (
         handle_special_cases("Every saturday/sun, at 9am")
@@ -120,9 +119,7 @@ def test_get_next_no_days():
     """Test that we can get the next due date from an interval, frequency, and base."""
     # Check that it works for an event happening every day (starting from today)
     today = (
-        datetime.now()
-        .astimezone()
-        .replace(hour=9, minute=30, second=0, microsecond=0)
+        datetime.now().astimezone().replace(hour=9, minute=30, second=0, microsecond=0)
     )
     base_time = time(hour=9, minute=30)
     base = datetime.now().astimezone()
@@ -199,9 +196,7 @@ def test_get_next_no_days():
 def test_get_next_specific_days():
     """Test that we can get the next due date from an interval, frequency, days, and base."""
     today = (
-        datetime.now()
-        .astimezone()
-        .replace(hour=9, minute=30, second=0, microsecond=0)
+        datetime.now().astimezone().replace(hour=9, minute=30, second=0, microsecond=0)
     )
     base_time = time(hour=9, minute=30)
 
@@ -231,15 +226,11 @@ def test_get_next_specific_days():
     assert d == today.replace(hour=23, minute=59)
 
     # Everything should operate the same if we go farther back in time
-    d = get_next(
-        monday - relativedelta(weeks=2), Interval.WEEKS, 1, base_time, days
-    )
+    d = get_next(monday - relativedelta(weeks=2), Interval.WEEKS, 1, base_time, days)
     assert d == (today + relativedelta(days=1))
 
     # Test with a different frequency
-    d = get_next(
-        monday - relativedelta(weeks=2), Interval.WEEKS, 4, base_time, days
-    )
+    d = get_next(monday - relativedelta(weeks=2), Interval.WEEKS, 4, base_time, days)
     assert d == (today - relativedelta(days=1) + relativedelta(weeks=2))
 
     # ----------------- TEST MONTHS ----------------- #
@@ -264,15 +255,11 @@ def test_get_next_specific_days():
     assert d == today.replace(hour=23, minute=59)
 
     # Everything should operate the same if we go farther back in time
-    d = get_next(
-        today - relativedelta(months=2), Interval.MONTHS, 1, base_time, days
-    )
+    d = get_next(today - relativedelta(months=2), Interval.MONTHS, 1, base_time, days)
     assert d == (today + relativedelta(days=1))
 
     # Test with a different frequency
-    d = get_next(
-        today - relativedelta(months=2), Interval.MONTHS, 4, base_time, days
-    )
+    d = get_next(today - relativedelta(months=2), Interval.MONTHS, 4, base_time, days)
     assert d == (today + relativedelta(days=-1, months=2))
 
     # ----------------- TEST YEARS ----------------- #
@@ -298,24 +285,18 @@ def test_get_next_specific_days():
     assert d == today.replace(hour=23, minute=59)
 
     # Everything should operate the same if we go farther back in time
-    d = get_next(
-        today - relativedelta(years=2), Interval.YEARS, 1, base_time, days
-    )
+    d = get_next(today - relativedelta(years=2), Interval.YEARS, 1, base_time, days)
     assert d == (today + relativedelta(days=1))
 
     # Test with a different frequency
-    d = get_next(
-        today - relativedelta(years=2), Interval.YEARS, 4, base_time, days
-    )
+    d = get_next(today - relativedelta(years=2), Interval.YEARS, 4, base_time, days)
     assert d == (today + relativedelta(days=-1, years=2))
 
 
 def test_schedule_parses_task():
     """Test that the schedule class unpacks our Task object correctly."""
     today = (
-        datetime.now()
-        .astimezone()
-        .replace(hour=7, minute=0, second=0, microsecond=0)
+        datetime.now().astimezone().replace(hour=7, minute=0, second=0, microsecond=0)
     )
 
     task = Task(
@@ -326,9 +307,7 @@ def test_schedule_parses_task():
         due_date=today - relativedelta(days=3),
     )
     schedule = Schedule(task)
-    assert schedule._at_time == time(hour=7, minute=0).replace(
-        tzinfo=tzlocal()
-    )
+    assert schedule._at_time == time(hour=7, minute=0).replace(tzinfo=tzlocal())
     assert schedule._base == task.last_edited_time
     assert schedule._days == None
     assert schedule._interval == Interval.DAYS
@@ -342,9 +321,7 @@ def test_schedule_parses_task():
         due_date=today - relativedelta(days=3),
     )
     schedule = Schedule(task)
-    assert schedule._at_time == time(hour=7, minute=0).replace(
-        tzinfo=tzlocal()
-    )
+    assert schedule._at_time == time(hour=7, minute=0).replace(tzinfo=tzlocal())
     assert schedule._base == task.due_date
     assert schedule._days == None
     assert schedule._interval == Interval.DAYS
@@ -358,9 +335,7 @@ def test_schedule_parses_task():
         due_date=today - relativedelta(days=3),
     )
     schedule = Schedule(task)
-    assert schedule._at_time == time(hour=0, minute=0).replace(
-        tzinfo=tzlocal()
-    )
+    assert schedule._at_time == time(hour=0, minute=0).replace(tzinfo=tzlocal())
     assert schedule._base == task.due_date
     assert schedule._days == None
     assert schedule._interval == Interval.WEEKS
@@ -374,9 +349,7 @@ def test_schedule_parses_task():
         due_date=today - relativedelta(days=3),
     )
     schedule = Schedule(task)
-    assert schedule._at_time == time(hour=0, minute=0).replace(
-        tzinfo=tzlocal()
-    )
+    assert schedule._at_time == time(hour=0, minute=0).replace(tzinfo=tzlocal())
     assert schedule._base == task.due_date
     assert schedule._days == [1, 2, 3, 5]
     assert schedule._interval == Interval.WEEKS
