@@ -9,7 +9,7 @@
       how to copy from one to the other; e.g. we know how to copy multi-select, select, date, etc.)
 - [x] Add gh action to run python job 2x/day
 - [x] Remove/archive JS code
-- [ ] Improve Cron functionality - cron, or:
+- [x] Improve Cron functionality - cron, or:
   - Daily
   - Weekly (on same day)
   - Monthly
@@ -19,10 +19,9 @@
   - Every (X) months on the (X) day
   - Every (X) months on the (first/second/third/fourth/fifth/last) (monday/tuesday/wednesday/...)
   - Every (X) months on the (first/last) workday
-- [ ] Add tests
+- [x] Add tests
   - [x] Test schedule utility
-  - [ ] Test notion recurring tasks (stub out Notion client)?
-- [ ] Make schedule attributes read only
+- [x] Make schedule attributes read only
 - [ ] Run tests on PRs
 - [ ] Sync with Google calendar
 - [ ] Sync with Asana (tasks assigned in Asana get copied over)
