@@ -119,11 +119,13 @@ def test_handle_special_cases():
 def test_get_next_no_days():
     """Test that we can get the next due date from an interval, frequency, and base."""
     # Check that it works for an event happening every day (starting from today)
-    today = datetime.now(tzlocal()).replace(
-        hour=9, minute=30, second=0, microsecond=0
+    today = (
+        datetime.now()
+        .astimezone()
+        .replace(hour=9, minute=30, second=0, microsecond=0)
     )
     base_time = time(hour=9, minute=30)
-    base = datetime.now(tzlocal())
+    base = datetime.now().astimezone()
 
     # ----------------- TEST DAYS ----------------- #
     # Test that it works with days
@@ -196,8 +198,10 @@ def test_get_next_no_days():
 
 def test_get_next_specific_days():
     """Test that we can get the next due date from an interval, frequency, days, and base."""
-    today = datetime.now(tzlocal()).replace(
-        hour=9, minute=30, second=0, microsecond=0
+    today = (
+        datetime.now()
+        .astimezone()
+        .replace(hour=9, minute=30, second=0, microsecond=0)
     )
     base_time = time(hour=9, minute=30)
 

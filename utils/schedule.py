@@ -187,9 +187,10 @@ def get_next(
     # supposed to be daily after midnight UTC, and it will skip a day)
     # TODO(fwallace): How do we deal with the desired time (e.g. if I have a task every
     # day at 9am, and I completed it today at 1am, how do I ensure it is recreated for
-    # 9am today?) Do I replace hour + minute, and check if the base is < that (e.g. )
-    next_due_date = base
-    now = datetime.now(tzlocal())
+    # 9am today?) Do I replace hour + minute, and check if the base is < that (e.g.)
+    # First, let's make sure
+    next_due_date = base.astimezone()
+    now = datetime.now().astimezone()
 
     # How many days, weeks, months, years have elapsed since the base?
     # Days, months, and years are pretty simple
