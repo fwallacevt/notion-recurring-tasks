@@ -3,11 +3,14 @@
 from datetime import datetime, time
 from dateutil.relativedelta import relativedelta
 from dateutil.tz.tz import tzlocal
+from notion.orm import now_utc
+from notion.tasks import Task
 import pytest
 import re
 
 from utils.schedule import (
     Interval,
+    Schedule,
     StartFrom,
     get_next,
     get_next_due_date,
@@ -94,11 +97,8 @@ def test_parse_weekdays():
 
 def test_handle_special_cases():
     """Unit test `handle_special_cases`."""
-    assert handle_special_cases("Every day") == "Every 1 weeks, on 1-7"
-    assert (
-        handle_special_cases("Every day, at 9am")
-        == "Every 1 weeks, on 1-7, at 9am"
-    )
+    assert handle_special_cases("Every day") == "Every 1 days"
+    assert handle_special_cases("Every day, at 9am") == "Every 1 days, at 9am"
     assert handle_special_cases("Every weekday") == "Every 1 weeks, on 1-5"
     assert (
         handle_special_cases("Every weekday, at 9am")
@@ -312,27 +312,101 @@ def test_get_next_specific_days():
 
 def test_schedule_parses_task():
     """Test that the schedule class unpacks our Task object correctly."""
-    pass
+    today = (
+        datetime.now()
+        .astimezone()
+        .replace(hour=7, minute=0, second=0, microsecond=0)
+    )
 
+    task = Task(
+        date_created=now_utc(),
+        last_edited_time=now_utc(),
+        name="Test",
+        schedule="Every day, at 7am",
+        due_date=today - relativedelta(days=3),
+    )
+    schedule = Schedule(task)
+    assert schedule._at_time == time(hour=7, minute=0).replace(
+        tzinfo=tzlocal()
+    )
+    assert schedule._base == task.last_edited_time
+    assert schedule._days == None
+    assert schedule._interval == Interval.DAYS
+    assert schedule._frequency == 1
 
-def test_get_next_due_date():
-    """Test that we get the next expected due date."""
-    pass
+    task = Task(
+        date_created=now_utc(),
+        last_edited_time=now_utc(),
+        name="Test",
+        schedule="Every day, at 7am, from due date",
+        due_date=today - relativedelta(days=3),
+    )
+    schedule = Schedule(task)
+    assert schedule._at_time == time(hour=7, minute=0).replace(
+        tzinfo=tzlocal()
+    )
+    assert schedule._base == task.due_date
+    assert schedule._days == None
+    assert schedule._interval == Interval.DAYS
+    assert schedule._frequency == 1
 
+    task = Task(
+        date_created=now_utc(),
+        last_edited_time=now_utc(),
+        name="Test",
+        schedule="Every 3 weeks, from due date",
+        due_date=today - relativedelta(days=3),
+    )
+    schedule = Schedule(task)
+    assert schedule._at_time == time(hour=0, minute=0).replace(
+        tzinfo=tzlocal()
+    )
+    assert schedule._base == task.due_date
+    assert schedule._days == None
+    assert schedule._interval == Interval.WEEKS
+    assert schedule._frequency == 3
 
-#   - Every (X) days (from due date/now)
-#   - Every (day/weekday)
-#   - Every (Mon/Tues/Weds...)
-#   - Every (X) weeks on (monday/tuesday/wednesday/...)
-#   - Every (X) months on the (X) day
-#   - Every (X) months on the (first/last) day
-#   - Every (X) months (from due date/now)
-#   - Every (Jan/Feb/March...) on the (X) day
-#   - Every (X) years
-#   - Every (X) years on the (X) day
-#   - Every (X) years (from due date/now)
+    task = Task(
+        date_created=now_utc(),
+        last_edited_time=now_utc(),
+        name="Test",
+        schedule="Every 3 weeks, on mon-wed/friday",
+        due_date=today - relativedelta(days=3),
+    )
+    schedule = Schedule(task)
+    assert schedule._at_time == time(hour=0, minute=0).replace(
+        tzinfo=tzlocal()
+    )
+    assert schedule._base == task.due_date
+    assert schedule._days == [1, 2, 3, 5]
+    assert schedule._interval == Interval.WEEKS
+    assert schedule._frequency == 3
 
-# There's also a time component (e.g. "at 9am")
+    # Check that it throws an exception if we set specific days and whether to start
+    # from due date or completed date
+    with pytest.raises(
+        Exception,
+        match=r"Can't set both 'days' and whether to start from due date/completed date.",
+    ):
+        task = Task(
+            date_created=now_utc(),
+            last_edited_time=now_utc(),
+            name="Test",
+            schedule="Every 3 weeks, on mon-wed/friday, from due date",
+            due_date=today - relativedelta(days=3),
+        )
+        schedule = Schedule(task)
 
-#   - Every (X) months on the (first/second/third/fourth/fifth/last) (monday/tuesday/wednesday/...)
-#   - Every (X) months on the (first/last) workday
+    # Check that we can't ask for specific days if our interval is in days
+    with pytest.raises(
+        Exception,
+        match=r"Cannot process task 'Test' - schedules with intervals of 'days' cannot execute on specific days",
+    ):
+        task = Task(
+            date_created=now_utc(),
+            last_edited_time=now_utc(),
+            name="Test",
+            schedule="Every 3 days, on mon-wed/friday",
+            due_date=today - relativedelta(days=3),
+        )
+        schedule = Schedule(task)

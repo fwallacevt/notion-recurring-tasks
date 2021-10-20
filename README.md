@@ -20,8 +20,8 @@
   - Every (X) months on the (first/second/third/fourth/fifth/last) (monday/tuesday/wednesday/...)
   - Every (X) months on the (first/last) workday
 - [ ] Add tests
-  - Test schedule utility
-  - Test notion recurring tasks (stub out Notion client)?
+  - [x] Test schedule utility
+  - [ ] Test notion recurring tasks (stub out Notion client)?
 - [ ] Make schedule attributes read only
 - [ ] Run tests on PRs
 - [ ] Sync with Google calendar

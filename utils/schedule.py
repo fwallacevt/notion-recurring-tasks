@@ -7,10 +7,8 @@ will just be a Cron string. However, it may also be one of:
     - Every (X) weeks, on (monday/tuesday/wednesday/...), (at 9am)
     - Every (X) months, on the last day, (at 9am)
     - Every (X) months/years, on day (X), (at 9am)
-
     - Every (day/weekday), (at 9am)
     - Every (Mon/Tue/Weds...), (at 9am)
-    - Every (Jan/Feb/March...) on the (X) day
     
 To implement:
     - Every (X) months on the (first/second/third/fourth/fifth/last) (monday/tuesday/wednesday/...)
@@ -227,11 +225,7 @@ def get_next(
         )
     else:
         # Otherwise, we have specific days that this is supposed to execute
-        # on. Figure out when it would be due today, in local time, if it were
-        # to be due today.
-        due_today_local = now.replace(
-            hour=at_time.hour, minute=at_time.minute, second=0, microsecond=0
-        )
+        # on.
 
         # If we have particular days, first figure out when the _latest_ it
         # will be due is. This is the base + intervals to add + frequency.
@@ -297,7 +291,8 @@ def get_next(
                 # We always subtract one because "day n" is an offset of n-1, etc. (since
                 # we're starting on day 1)
                 next_due_on_day = due_base_local + relativedelta(days=d - 1)
-            if next_due_on_day < due_today_local:
+
+            if next_due_on_day < now:
                 if d == -1:
                     # If we're looking for the last day of the month, set that for the
                     # next month. We do that by incrementing to the next month (in case
@@ -314,8 +309,6 @@ def get_next(
                     next_due_on_day = next_due_on_day + relativedelta(
                         **{interval.name.lower(): frequency}  # type: ignore
                     )
-
-            print(f"Day: {d}, next_due_on_day: {next_due_on_day}")
 
             # Finally, if the next date it's due on this day is less than the latest
             # due date seen so far, set this as the latest due date.
@@ -377,7 +370,7 @@ def handle_special_cases(to_parse: str) -> str:
         - Every (Mon/Tue/Weds...) (at 9am)"""
     s = to_parse.lower()
     if s.startswith("every day"):
-        return s.replace("every day", "Every 1 weeks, on 1-7")
+        return s.replace("every day", "Every 1 days")
     elif s.startswith("every weekday"):
         return s.replace("every weekday", "Every 1 weeks, on 1-5")
     elif any([s.startswith(f"every {k}") for k in WEEKDAYS]):
