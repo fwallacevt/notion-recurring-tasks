@@ -9,8 +9,8 @@ on:
       - notion/**
       - workers/**
       - utils/**
-    # Only run on the master branch.
-    branches: [master]
+    # Only run on the main branch.
+    branches: [main]
   pull_request:
     # Only run if these paths change.
     paths:
@@ -18,8 +18,8 @@ on:
       - notion/**
       - workers/**
       - utils/**
-    # Only run on the master branch.
-    branches: [master]
+    # Only run on the main branch.
+    branches: [main]
 
   # Test our various workers.
   test_workers:
