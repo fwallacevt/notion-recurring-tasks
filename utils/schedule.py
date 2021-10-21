@@ -1,20 +1,4 @@
-"""Functions to parse a schedule string. In its most basic form, a schedule
-will just be a Cron string. However, it may also be one of:
-    # If no day or from due date/completed date is specified, we will default to
-    # "from completed date"
-    - Every (X) days/weeks/months/years, (at 9am)
-    - Every (X) days/weeks/months/years, (from due date/completed date), (at 9am)
-    - Every (X) weeks, on (monday/tuesday/wednesday/...), (at 9am)
-    - Every (X) months, on the last day, (at 9am)
-    - Every (X) months/years, on day (X), (at 9am)
-    - Every (day/weekday), (at 9am)
-    - Every (Mon/Tue/Weds...), (at 9am)
-    
-To implement:
-    - Every (X) months on the (first/second/third/fourth/fifth/last) (monday/tuesday/wednesday/...)
-    - Every (X) months on the (first/last) workday
-    - Every (Jan/Feb/March...) on the (X) day
-"""
+"""Functions to parse a schedule string."""
 
 
 import calendar
@@ -583,7 +567,44 @@ def parse_numerics(to_parse: str) -> List[int]:
 
 
 def get_next_due_date(task: Task) -> datetime:
-    """Given a task, figure out what its next due date will be based on its schedule."""
+    """Given a task, figure out what its next due date will be based on its schedule. In its
+    most basic form, a schedule will just be a Cron string. However, it may also take the following
+    forms:
+        - Every (X) (days|weeks|months|years)
+        - Every (X) (days|weeks|months|years), at (9am)
+        - Every (X) (days|weeks|months|years), from (due date/completed date)
+        - Every (X) (days|weeks|months|years), from (due date/completed date), at (9am)
+        - Every (X) (days|weeks|months|years), at (9am), from (due date/completed date)
+        - Every (X) weeks, on (mon/tue/wed, etc.)
+        - Every (X) weeks, on (mon/tue/wed, etc.), at (9am)
+        - Every (X) months, on the last day
+        - Every (X) months, on the last day, at (9am)
+        - Every (X) (weeks|months|years), on day (1/3/5-7)
+        - Every (X) (weeks|months|years), on day (1/3/5-7), at (9am)
+        - Every (X) (weeks|months|years), at (9am), on day (X)
+        - Every (day|weekday)
+        - Every (day|weekday), at (9am)
+        - Every (mon/tue/wed, etc.)
+        - Every (mon/tue/wed, etc.), at (9am)
+
+    where values in parentheses are specified by the user.
+
+    NOTE: The syntax in these strings is extremely important. Our parser expects that each part
+    of the schedule be separated by a comma, and that consecutive elements of lists be separated
+    by forward slashes (/). Some examples of valid strings are:
+        - "Every mon/tuesday, at 9am" (equivalent to "Every 1 weeks, on day 1/2, at 9am")
+        - "Every 1 months, on day 1/5-9" ("5-9" will be interpreted as a range, meaning the schedule
+            should execute on days 1, 5, 6, 7, 8, and 9)
+        - "Every 1 months, on day 1"
+        - "Every 1 months, on the last day"
+
+    To specify days of the week, you may use either abbreviations (e.g. mon, tue) or the full day
+    name (monday, tuesday). Time (9am) must be in dateutil-compatible string format.
+
+    If "from (due date/completed date)" is not specified, we will choose a default, depending on
+    the configuration. Note that you cannot specify _*both*_ "start from" _*and*_ specific days to
+    execute on."""
+
     base = now_utc()
     if task.schedule is None:
         raise Exception(f"Task '{task.name}' has no schedule")
