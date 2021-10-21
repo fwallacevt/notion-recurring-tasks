@@ -18,6 +18,7 @@ To implement:
 
 
 import calendar
+from loguru import logger
 import re
 from datetime import datetime, time
 from enum import Enum
@@ -96,6 +97,9 @@ class Schedule:
 
     def __init__(self, task: Task):
         """Parse the schedule string and initialize with appropriate values."""
+        logger.info(
+            f"Parsing schedule for task {task.name}, schedule: {task.schedule}"
+        )
         # If there is no schedule, we can't handle this
         if task.schedule is None:
             raise Exception(f"Task '{task.name}' has no schedule.")
@@ -105,16 +109,25 @@ class Schedule:
 
         # Handle some special cases...
         schedule = handle_special_cases(task.schedule)
+        logger.info(
+            f"Schedule '{task.schedule}' converted to '{schedule}' after special cases."
+        )
 
         # Handle the simple case of "Every (X) (interval)". Components are separated by
         # commas to make processing easier. Then, each piece is separated by a space.
         components = [s.strip() for s in schedule.split(",")]
+        logger.info(
+            f"Schedule has {len(components)} components: {components}."
+        )
 
         # We should always have a frequency and interval component, e.g.
         # "Every (frequency) (interval)"
         interval, frequency = parse_frequency_and_interval(components[0])
         self._interval = interval
         self._frequency = frequency
+        logger.info(
+            f"Schedule for task {task.name} has interval {interval.name}, frequency {frequency}."
+        )
 
         # If there is more to parse, we expect to have _either_ a specification of starting
         # from due date/completed date, _or_ specific days this should be on, and maybe
@@ -142,7 +155,9 @@ class Schedule:
                     # Otherwise, we expect this to be a set of numeric days of the week/month/year
                     self._days = parse_days(c)
             elif c.startswith("at"):
-                today_at_desired_time = parser.parse(c[3:]).replace(tzinfo=tzlocal())
+                today_at_desired_time = parser.parse(c[3:]).replace(
+                    tzinfo=tzlocal()
+                )
 
         # Now, check some of our configuration and make sure the base is set appropriately.
         # We set the base depending on `start_from`.
@@ -157,6 +172,9 @@ class Schedule:
             hour=today_at_desired_time.hour,
             minute=today_at_desired_time.minute,
             tzinfo=today_at_desired_time.tzinfo,
+        )
+        logger.info(
+            f"Schedule for task {task.name} has base {self._base}, at_time {self._at_time}"
         )
 
     def get_next(self):
@@ -178,13 +196,17 @@ def get_next(
     days: Optional[list[int]] = None,
 ) -> datetime:
     """Get the next due date, starting from the given base."""
-
+    logger.info(
+        f"Getting next due date with base {base}, interval {interval.name}, frequencey {frequency}, at_time {at_time}, and days {days}"
+    )
     # TODO(fwallace): How do we deal with the desired time (e.g. if I have a task every
     # day at 9am, and I completed it today at 1am, how do I ensure it is recreated for
     # 9am today?) Do I replace hour + minute, and check if the base is < that (e.g.)
     # Make sure we're working with everything as local time
     next_due_date = base.astimezone()
     now = datetime.now().astimezone()
+
+    logger.info(f"Base in local timezone: {next_due_date}")
 
     # How many days, weeks, months, years have elapsed since the base?
     # Days, months, and years are pretty simple
@@ -211,23 +233,32 @@ def get_next(
         "months": months_elapsed,
         "years": years_elapsed,
     }
-    to_add = {k: (v // frequency) * frequency for k, v in elapsed_times.items()}
+    to_add = {
+        k: (v // frequency) * frequency for k, v in elapsed_times.items()
+    }
+
+    logger.info(f"Elapsed time since base: {elapsed_times}")
+    logger.info(f"Times to add: {to_add}")
 
     if not days:
+        logger.info(f"No days - adding intervals.")
         next_due_date = next_due_date + relativedelta(
             **{
-                interval.name.lower(): to_add[interval.name.lower()] + frequency
+                interval.name.lower(): to_add[interval.name.lower()]
+                + frequency
             }  # type: ignore
         )
     else:
         # Otherwise, we have specific days that this is supposed to execute
         # on.
+        logger.info(f"Have specific days {days} this should execute on.")
 
         # If we have particular days, first figure out when the _latest_ it
         # will be due is. This is the base + intervals to add + frequency + offset
         latest_due = base + relativedelta(
             **{
-                interval.name.lower(): to_add[interval.name.lower()] + frequency
+                interval.name.lower(): to_add[interval.name.lower()]
+                + frequency
             }  # type: ignore
         )
 
@@ -243,12 +274,15 @@ def get_next(
             else calendar.monthrange(latest_due.year, latest_due.month)[-1]
         )
         latest_due = latest_due + relativedelta(days=offset)
+        logger.info(f"Latest possible due date: {latest_due}")
 
         if interval == Interval.WEEKS:
             # Next, figure out which week we're comparing against. This is Monday of either
             # this week, or the last week this schedule would have executed.
             due_base_local = (
-                base.replace(hour=at_time.hour, minute=at_time.minute, second=0)
+                base.replace(
+                    hour=at_time.hour, minute=at_time.minute, second=0
+                )
                 - relativedelta(days=base.weekday())
                 + relativedelta(weeks=to_add[interval.name.lower()])
             )
@@ -260,7 +294,6 @@ def get_next(
             ) + relativedelta(
                 **{interval.name.lower(): to_add[interval.name.lower()]}  # type: ignore
             )
-            print(f"Due base local: {due_base_local}")
         elif interval == Interval.YEARS:
             # Figure out which year we're comparing against. This is the first day
             # of this year, or the last year this schedule may have executed in.
@@ -278,11 +311,9 @@ def get_next(
             raise Exception(
                 f"Can't get next due date with days {days}, base {base}, and interval {interval.name} - unknown interval"
             )
-
-        # TODO(fwallace): Logging
-        # print(
-        #     f"latest_due: {latest_due}, due_base_local: {due_base_local}, days: {days}"
-        # )
+        logger.info(
+            f"Due base local with interval {interval.name}: {due_base_local}"
+        )
 
         # Now that we have a base to work from, we can figure out when this would next
         # be due on one of the days we're interested in.
@@ -294,9 +325,9 @@ def get_next(
                 # If we're looking for the last day of the month, find the last day and
                 # replace `due_base_local.day`
                 next_due_on_day = due_base_local.replace(
-                    day=calendar.monthrange(due_base_local.year, due_base_local.month)[
-                        -1
-                    ]
+                    day=calendar.monthrange(
+                        due_base_local.year, due_base_local.month
+                    )[-1]
                 )
             else:
                 # We always subtract one because "day n" is an offset of n-1, etc. (since
@@ -321,17 +352,28 @@ def get_next(
                         **{interval.name.lower(): frequency}  # type: ignore
                     )
 
+            logger.info(
+                f"For day {d}, interval {interval.name}, next due on this day: {next_due_on_day}"
+            )
+
             # Finally, if the next date it's due on this day is less than the latest
             # due date seen so far, set this as the latest due date.
             if next_due_on_day < latest_due:
+                logger.info(
+                    f"Replacing latest due {latest_due} with next due on this day: {next_due_on_day}"
+                )
                 latest_due = next_due_on_day
 
         next_due_date = latest_due
 
     # This is probably already done, but just be safe here.
-    return next_due_date.replace(
+    next_due_date = next_due_date.replace(
         hour=at_time.hour, minute=at_time.minute, second=0, microsecond=0
     )
+    logger.info(
+        f"Next due date with base {base}, interval {interval.name}, frequencey {frequency}, at_time {at_time}, and days {days}: {next_due_date}"
+    )
+    return next_due_date
 
 
 def get_base(
@@ -341,6 +383,10 @@ def get_base(
 ) -> datetime:
     """Get the base, given a task and an optional specification of when to start
     from."""
+    logger.info(
+        f"Getting base time for task {task.name}, starting from {start_from}, with days {days}"
+    )
+
     # Figure out what the base time we want is. If we have "start from", it'll tell us
     # to use one of the due date, or completed date. For now, `last_edited_time` will
     # have to approximate completed date.
@@ -421,7 +467,9 @@ def parse_start_from(to_parse: str) -> StartFrom:
     except KeyError:
         raise Exception(f"No known start from {to_parse[5:]}")
     except Exception as e:
-        raise Exception(f"Failed to parse start from string '{to_parse}', error: {e}")
+        raise Exception(
+            f"Failed to parse start from string '{to_parse}', error: {e}"
+        )
 
 
 def parse_weekdays(to_parse: str) -> List[int]:
@@ -465,7 +513,9 @@ def parse_weekdays(to_parse: str) -> List[int]:
 
         return check_numerics(parse_numerics(to_parse), 1, 7)
     except Exception as e:
-        raise Exception(f"Failed to parse weekdays string '{to_parse}', error: {e}")
+        raise Exception(
+            f"Failed to parse weekdays string '{to_parse}', error: {e}"
+        )
 
 
 def check_numerics(numerics: List[int], min: int, max: int) -> List[int]:
@@ -503,7 +553,9 @@ def parse_days(to_parse: str) -> List[int]:
 
         return numeric_values
     except Exception as e:
-        raise Exception(f"Failed to parse days string '{to_parse}', error: {e}")
+        raise Exception(
+            f"Failed to parse days string '{to_parse}', error: {e}"
+        )
 
 
 def parse_numerics(to_parse: str) -> List[int]:
@@ -514,7 +566,9 @@ def parse_numerics(to_parse: str) -> List[int]:
         ranges = list(filter(lambda s: "-" in s, parts))
 
         # Immediately add any hardcoded numbers
-        numeric_values = [int(v) for v in filter(lambda s: "-" not in s, parts)]
+        numeric_values = [
+            int(v) for v in filter(lambda s: "-" not in s, parts)
+        ]
 
         # Parse ranges and add them as well
         for r in ranges:
@@ -528,13 +582,6 @@ def parse_numerics(to_parse: str) -> List[int]:
         )
 
 
-def process_schedule_str(schedule: str) -> datetime:
-    """Process a schedule string, split into its components, and return the next
-    due date."""
-    now = now_utc()
-    return now_utc()
-
-
 def get_next_due_date(task: Task) -> datetime:
     """Given a task, figure out what its next due date will be based on its schedule."""
     base = now_utc()
@@ -545,9 +592,13 @@ def get_next_due_date(task: Task) -> datetime:
     # ourselves.
     if croniter.is_valid(task.schedule):
         # croniter's got this
+        logger.info(
+            f"Task {task.name} has a cron-compatible schedule - deferring to croniter"
+        )
         iter = croniter(task.schedule, base)
         return iter.get_next(datetime)
     else:
         # Process with the schedule utility
+        logger.info(f"Task {task.name} has a custom schedule - parsing")
         schedule = Schedule(task)
         return schedule.get_next()

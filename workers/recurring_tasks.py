@@ -1,5 +1,6 @@
 """Update our recurring tasks database."""
 
+from loguru import logger
 from os import environ
 from typing import List
 from zoneinfo import ZoneInfo
@@ -17,29 +18,36 @@ def create_new_recurring_tasks(client: NotionClient, tasks: List[Task]):
     For each new task we create, we'll copy everything from the old task, set the "Parent"
     to the most recently completed task (create a singly-linked list), and update the due
     date to the next occurrence of this schedule"""
+    logger.info(f"Creating {len(tasks)} new recurring tasks.")
     for t in tasks:
-        exists = Task.check_open_task_exists_by_name(client, t.name)
-        if exists:
-            # TODO(fwallace): logging
-            # logger.debug(f"Skipping...")
-            print(f"There is an open task with name {t.name} - skipping")
-            continue
+        try:
+            exists = Task.check_open_task_exists_by_name(client, t.name)
+            if exists:
+                logger.info(
+                    f"There is an open task with name {t.name} - skipping"
+                )
+                continue
 
-        # Get the next due date, then make sure that we convert to EST so that Notion will display
-        # correctly
-        # TODO(fwallace): When I'm formatting the due date, I should remove the time
-        # component if it's all zeroes.
-        # TODO(fwallace): Confirm that this will confirm a due date _in local time_ (make sure that
-        # timestamps on the objects are parsed as UTC or local time, consistently)
-        # TODO(fwallace): Confirm that this will set the due date in notion _in local time_ (make sure
-        # that due dates are set as local time)
-        # TODO(fwallace): What will local time look like if we're running on GitHub runners? How
-        # do we know what local time zone is?
-        next_due = get_next_due_date(t)
-        t.due_date = next_due.astimezone(ZoneInfo("EST"))
-        t.done = False
-        print(f"Creating new task {t.name}")
-        t.insert(client)
+            # Get the next due date, then make sure that we convert to EST so that Notion will display
+            # correctly
+            # TODO(fwallace): When I'm formatting the due date, I should remove the time
+            # component if it's all zeroes.
+            # TODO(fwallace): Confirm that this will confirm a due date _in local time_ (make sure that
+            # timestamps on the objects are parsed as UTC or local time, consistently)
+            # TODO(fwallace): Confirm that this will set the due date in notion _in local time_ (make sure
+            # that due dates are set as local time)
+            # TODO(fwallace): What will local time look like if we're running on GitHub runners? How
+            # do we know what local time zone is?
+            next_due = get_next_due_date(t)
+
+            logger.info(
+                f"Creating new task {t.name}, with new due date {next_due} (previously {t.due_date})"
+            )
+            t.due_date = next_due.astimezone(ZoneInfo("EST"))
+            t.done = False
+            t.insert(client)
+        except Exception as e:
+            logger.error(f"Failed to create new task {t.name}, error: {e}")
 
 
 def handle_recurring_tasks():
@@ -49,10 +57,11 @@ def handle_recurring_tasks():
 
     # First, get the last time this ran
     ts = Execution.get_last_execution_time_utc(client)
+    logger.info(f"Last executed: {ts}")
 
     # Query all tasks in our database that have been modified since that time
     tasks_to_recreate = Task.find_completed_recurring_tasks_since(client, ts)
-    print(f"Found {len(tasks_to_recreate)} recurring tasks to make...")
+    logger.info(f"Found {len(tasks_to_recreate)} recurring tasks to make...")
 
     # Now, for each of these recurring tasks, we have to create a new task
     # for the next time that schedule should execute (unless there's an outstanding
@@ -63,6 +72,7 @@ def handle_recurring_tasks():
     now = now_utc()
     execution = Execution(
         date_created=now,
-        name=f"""Execution ts: {now.astimezone(ZoneInfo("EST")).isoformat()}""",
+        name=f"""Execution ts: {now.astimezone().isoformat()}""",
     )
+    logger.info(f"Creating new execution record {execution.name}")
     execution.insert(client)
