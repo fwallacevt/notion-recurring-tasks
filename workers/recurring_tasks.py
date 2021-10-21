@@ -1,9 +1,10 @@
 """Update our recurring tasks database."""
 
-from loguru import logger
 from os import environ
 from typing import List
 from zoneinfo import ZoneInfo
+
+from loguru import logger
 
 from notion import Execution, NotionClient, Task
 from notion.orm import now_utc
@@ -23,9 +24,7 @@ def create_new_recurring_tasks(client: NotionClient, tasks: List[Task]):
         try:
             exists = Task.check_open_task_exists_by_name(client, t.name)
             if exists:
-                logger.info(
-                    f"There is an open task with name {t.name} - skipping"
-                )
+                logger.info(f"There is an open task with name {t.name} - skipping")
                 continue
 
             # Get the next due date, then make sure that we convert to EST so that Notion will display

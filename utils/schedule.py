@@ -2,7 +2,6 @@
 
 
 import calendar
-from loguru import logger
 import re
 from datetime import datetime, time
 from enum import Enum
@@ -12,6 +11,7 @@ from croniter import croniter
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
 from dateutil.tz import tzlocal
+from loguru import logger
 
 from notion import Task, now_utc
 
@@ -81,9 +81,7 @@ class Schedule:
 
     def __init__(self, task: Task):
         """Parse the schedule string and initialize with appropriate values."""
-        logger.info(
-            f"Parsing schedule for task {task.name}, schedule: {task.schedule}"
-        )
+        logger.info(f"Parsing schedule for task {task.name}, schedule: {task.schedule}")
         # If there is no schedule, we can't handle this
         if task.schedule is None:
             raise Exception(f"Task '{task.name}' has no schedule.")
@@ -100,9 +98,7 @@ class Schedule:
         # Handle the simple case of "Every (X) (interval)". Components are separated by
         # commas to make processing easier. Then, each piece is separated by a space.
         components = [s.strip() for s in schedule.split(",")]
-        logger.info(
-            f"Schedule has {len(components)} components: {components}."
-        )
+        logger.info(f"Schedule has {len(components)} components: {components}.")
 
         # We should always have a frequency and interval component, e.g.
         # "Every (frequency) (interval)"
@@ -139,9 +135,7 @@ class Schedule:
                     # Otherwise, we expect this to be a set of numeric days of the week/month/year
                     self._days = parse_days(c)
             elif c.startswith("at"):
-                today_at_desired_time = parser.parse(c[3:]).replace(
-                    tzinfo=tzlocal()
-                )
+                today_at_desired_time = parser.parse(c[3:]).replace(tzinfo=tzlocal())
 
         # Now, check some of our configuration and make sure the base is set appropriately.
         # We set the base depending on `start_from`.
@@ -217,9 +211,7 @@ def get_next(
         "months": months_elapsed,
         "years": years_elapsed,
     }
-    to_add = {
-        k: (v // frequency) * frequency for k, v in elapsed_times.items()
-    }
+    to_add = {k: (v // frequency) * frequency for k, v in elapsed_times.items()}
 
     logger.info(f"Elapsed time since base: {elapsed_times}")
     logger.info(f"Times to add: {to_add}")
@@ -228,8 +220,7 @@ def get_next(
         logger.info(f"No days - adding intervals.")
         next_due_date = next_due_date + relativedelta(
             **{
-                interval.name.lower(): to_add[interval.name.lower()]
-                + frequency
+                interval.name.lower(): to_add[interval.name.lower()] + frequency
             }  # type: ignore
         )
     else:
@@ -241,8 +232,7 @@ def get_next(
         # will be due is. This is the base + intervals to add + frequency + offset
         latest_due = base + relativedelta(
             **{
-                interval.name.lower(): to_add[interval.name.lower()]
-                + frequency
+                interval.name.lower(): to_add[interval.name.lower()] + frequency
             }  # type: ignore
         )
 
@@ -264,9 +254,7 @@ def get_next(
             # Next, figure out which week we're comparing against. This is Monday of either
             # this week, or the last week this schedule would have executed.
             due_base_local = (
-                base.replace(
-                    hour=at_time.hour, minute=at_time.minute, second=0
-                )
+                base.replace(hour=at_time.hour, minute=at_time.minute, second=0)
                 - relativedelta(days=base.weekday())
                 + relativedelta(weeks=to_add[interval.name.lower()])
             )
@@ -295,9 +283,7 @@ def get_next(
             raise Exception(
                 f"Can't get next due date with days {days}, base {base}, and interval {interval.name} - unknown interval"
             )
-        logger.info(
-            f"Due base local with interval {interval.name}: {due_base_local}"
-        )
+        logger.info(f"Due base local with interval {interval.name}: {due_base_local}")
 
         # Now that we have a base to work from, we can figure out when this would next
         # be due on one of the days we're interested in.
@@ -309,9 +295,9 @@ def get_next(
                 # If we're looking for the last day of the month, find the last day and
                 # replace `due_base_local.day`
                 next_due_on_day = due_base_local.replace(
-                    day=calendar.monthrange(
-                        due_base_local.year, due_base_local.month
-                    )[-1]
+                    day=calendar.monthrange(due_base_local.year, due_base_local.month)[
+                        -1
+                    ]
                 )
             else:
                 # We always subtract one because "day n" is an offset of n-1, etc. (since
@@ -451,9 +437,7 @@ def parse_start_from(to_parse: str) -> StartFrom:
     except KeyError:
         raise Exception(f"No known start from {to_parse[5:]}")
     except Exception as e:
-        raise Exception(
-            f"Failed to parse start from string '{to_parse}', error: {e}"
-        )
+        raise Exception(f"Failed to parse start from string '{to_parse}', error: {e}")
 
 
 def parse_weekdays(to_parse: str) -> List[int]:
@@ -497,9 +481,7 @@ def parse_weekdays(to_parse: str) -> List[int]:
 
         return check_numerics(parse_numerics(to_parse), 1, 7)
     except Exception as e:
-        raise Exception(
-            f"Failed to parse weekdays string '{to_parse}', error: {e}"
-        )
+        raise Exception(f"Failed to parse weekdays string '{to_parse}', error: {e}")
 
 
 def check_numerics(numerics: List[int], min: int, max: int) -> List[int]:
@@ -537,9 +519,7 @@ def parse_days(to_parse: str) -> List[int]:
 
         return numeric_values
     except Exception as e:
-        raise Exception(
-            f"Failed to parse days string '{to_parse}', error: {e}"
-        )
+        raise Exception(f"Failed to parse days string '{to_parse}', error: {e}")
 
 
 def parse_numerics(to_parse: str) -> List[int]:
@@ -550,9 +530,7 @@ def parse_numerics(to_parse: str) -> List[int]:
         ranges = list(filter(lambda s: "-" in s, parts))
 
         # Immediately add any hardcoded numbers
-        numeric_values = [
-            int(v) for v in filter(lambda s: "-" not in s, parts)
-        ]
+        numeric_values = [int(v) for v in filter(lambda s: "-" not in s, parts)]
 
         # Parse ranges and add them as well
         for r in ranges:
