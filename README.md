@@ -80,6 +80,7 @@ Coming soon!
 - [ ] Flesh out README/documentation
   - [ ] Add a badge?
   - [ ] Add a code coverage badge (and ignore notion/ for coverage)
+- [ ] Get Eric's review
 - [ ] Sync with Google calendar
 - [ ] Sync with Asana (tasks assigned in Asana get copied over)
 - [ ] Post on Reddit?
