@@ -28,6 +28,7 @@ Different extensions are run using [GitHub actions](https://github.com/features/
 easily be stored to be passed to actions, and schedules or triggers can be customized. For an example of setting up
 actions, see below.
 TODO(fwallace): Link to recurring tasks for todo lists section (below).
+TODO(fwallace): Table of contents
 
 This project's primary value is as an example for others to use when developing against Notion's API.
 
@@ -37,7 +38,83 @@ The following features are supported by this project.
 
 ### Recurring tasks for todo lists
 
-Description... (also need to create a Notion template)
+This extension adds support for recurring tasks to Notion to do lists. It requires two tables to function, one
+containing tasks, and the other containing timestamps of its executions. The latter is used to limit query sizes by only
+looking at tasks modified since the last execution.
+
+This extension supports Cron string schedules, as well as the following forms:
+
+- Every (X) (days|weeks|months|years)
+- Every (X) (days|weeks|months|years), at (9am)
+- Every (X) (days|weeks|months|years), from (due date/completed date)
+- Every (X) (days|weeks|months|years), from (due date/completed date), at (9am)
+- Every (X) (days|weeks|months|years), at (9am), from (due date/completed date)
+- Every (X) weeks, on (mon/tue/wed, etc.)
+- Every (X) weeks, on (mon/tue/wed, etc.), at (9am)
+- Every (X) months, on the last day
+- Every (X) months, on the last day, at (9am)
+- Every (X) (weeks|months|years), on day (1/3/5-7)
+- Every (X) (weeks|months|years), on day (1/3/5-7), at (9am)
+- Every (X) (weeks|months|years), at (9am), on day (X)
+- Every (day|weekday)
+- Every (day|weekday), at (9am)
+- Every (mon/tue/wed, etc.)
+- Every (mon/tue/wed, etc.), at (9am)
+
+where values in parentheses are specified by the user.
+
+The syntax in these strings is extremely important. Our parser expects that each part of the schedule be separated by a
+comma, and that consecutive elements of lists be separated by forward slashes (/). Some examples of valid strings are:
+
+- "Every mon/tuesday, at 9am" (equivalent to "Every 1 weeks, on day 1/2, at 9am")
+- "Every 1 months, on day 1/5-9" ("5-9" will be interpreted as a range, meaning the schedule should execute on days 1,
+  5, 6, 7, 8, and 9)
+- "Every 1 months, on day 1"
+- "Every 1 months, on the last day"
+
+To specify days of the week, you may use either abbreviations (e.g. mon, tue) or the full day name (monday, tuesday).
+Time (9am) must be in dateutil-compatible string format.
+
+If "from (due date/completed date)" is not specified, we will choose a default, depending on the configuration. Note
+that you cannot specify _*both*_ "start from" _*and*_ specific days to execute on.
+
+#### Setup
+
+First, clone the [provided todo list
+template](https://airy-gravity-ede.notion.site/1fdbd589f8764f08bef994417a4452b4?v=20895c9c302e4bdaa6ebee836c2d2ab1). You
+may also use your own databases, with the following requirements:
+
+- The database you store your tasks in must have:
+  - name (title)
+  - last_edited_time (datetime)
+  - done (checkbox)
+  - status (select; with option "to do"
+  - due date (datetime)
+  - schedule (str)
+- The database you store executions in must have:
+  - name (title)
+  - date_created (datetime)
+
+_*If you create your own databases, you will need to regenerate ORM classes.*_
+TODO(fwallace): Link to "regenerate ORM classes"
+
+Once your databases are created, [create an
+integration](https://developers.notion.com/docs/getting-started#step-1-create-an-integration) and [give it access to
+both databases](https://developers.notion.com/docs/getting-started#step-2-share-a-database-with-your-integration). Next,
+[fork this repository](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository). Finally,
+create the following [repository
+secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository)
+on your fork:
+
+- NOTION_TASKS_DB_ID (your tasks database ID; see [here](https://stackoverflow.com/a/67729240) for how to get a database
+  ID)
+- NOTION_EXECUTIONS_DB_ID (your executions database ID)
+- NOTION_API_KEY (your integration token; if you didn't copy it earlier, you may copy it by going to "Settings &
+  Members" -> "Integrations", clicking the ellipsis next to your api key, and selecting "Copy internal integration
+  token")
+
+And just like that, you should be good to go! Now, you can [customize your databases] or [the extension's schedule].
+TODO(fwallace): Links!
 
 ### Habit tracking
 
