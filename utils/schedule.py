@@ -181,6 +181,7 @@ def get_next(
     # day at 9am, and I completed it today at 1am, how do I ensure it is recreated for
     # 9am today?) Do I replace hour + minute, and check if the base is < that (e.g.)
     # Make sure we're working with everything as local time
+    base = base.astimezone()
     next_due_date = base.astimezone()
     now = datetime.now().astimezone()
 
