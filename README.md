@@ -166,7 +166,6 @@ Coming soon!
 - [x] Make schedule attributes read only
 - [x] Run tests on PRs
 - [x] Lots of logging
-- [ ] Resolve todos
 - [x] Add better comments around scheduling - what's supported, specifically?
 - [x] Flesh out README/documentation
   - [x] Add a badge for runnion Notion
@@ -174,6 +173,7 @@ Coming soon!
 - [x] Get Eric's/Seamus' review
 - [ ] Sync with Google calendar
 - [ ] Sync with Asana (tasks assigned in Asana get copied over)
+- [ ] Resolve todos
 - [ ] Post on Reddit?
 - [ ] Add a code coverage badge (and ignore notion/\* for coverage) (https://github.com/marketplace/actions/dynamic-badges)
 - [ ] Extend schedule to support:
