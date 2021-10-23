@@ -212,7 +212,7 @@ def get_next(
         "months": months_elapsed,
         "years": years_elapsed,
     }
-    to_add = {k: (v // frequency) * frequency for k, v in elapsed_times.items()}
+    to_add = {k: max((v // frequency) * frequency, 0) for k, v in elapsed_times.items()}
 
     logger.info(f"Elapsed time since base: {elapsed_times}")
     logger.info(f"Times to add: {to_add}")
@@ -249,7 +249,9 @@ def get_next(
             else calendar.monthrange(latest_due.year, latest_due.month)[-1]
         )
         latest_due = latest_due + relativedelta(days=offset)
-        logger.info(f"Latest possible due date: {latest_due}")
+        logger.info(
+            f"With base {base}, delta {interval.name.lower()}: {to_add[interval.name.lower()] + frequency}, offset {offset}, the latest possible due date is: {latest_due}"
+        )
 
         if interval == Interval.WEEKS:
             # Next, figure out which week we're comparing against. This is Monday of either
@@ -305,6 +307,7 @@ def get_next(
                 # we're starting on day 1)
                 next_due_on_day = due_base_local + relativedelta(days=d - 1)
 
+            logger.info(f"Next due on day {d}: {next_due_on_day}. Now: {now}")
             if next_due_on_day < now:
                 if d == -1:
                     # If we're looking for the last day of the month, set that for the
