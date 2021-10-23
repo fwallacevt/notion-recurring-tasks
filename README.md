@@ -1,5 +1,6 @@
 # Notion extensions
 
+![Tests](https://github.com/fwallacevt/notion-recurring-tasks/actions/workflows/ci.yml/badge.svg)
 ![Recurring tasks](https://github.com/fwallacevt/notion-recurring-tasks/actions/workflows/run-recurring-tasks.yml/badge.svg)
 
 This project aims to extend [Notion's](https://www.notion.so/product) functionality to work more broadly for a variety
@@ -167,12 +168,12 @@ Coming soon!
 - [ ] Resolve todos
 - [x] Add better comments around scheduling - what's supported, specifically?
 - [ ] Flesh out README/documentation
-  - [ ] Add a badge?
+  - [x] Add a badge?
 - [ ] Get Eric's review
 - [ ] Sync with Google calendar
 - [ ] Sync with Asana (tasks assigned in Asana get copied over)
 - [ ] Post on Reddit?
-- [ ] Add a code coverage badge (and ignore notion/\* for coverage)
+- [ ] Add a code coverage badge (and ignore notion/\* for coverage) (https://github.com/marketplace/actions/dynamic-badges)
 - [ ] Extend schedule to support:
   - Every (X) months on the (first/second/third/fourth/fifth/last) (monday/tuesday/wednesday/...)
   - Every (X) months on the (first/last) workday
