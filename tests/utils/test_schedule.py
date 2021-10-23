@@ -5,7 +5,6 @@ from datetime import datetime, time
 
 import pytest
 from dateutil.relativedelta import relativedelta
-from dateutil.tz.tz import tzlocal
 
 from notion.orm import now_utc
 from notion.tasks import Task
@@ -298,7 +297,6 @@ def test_schedule_parses_task():
     today = (
         datetime.now().astimezone().replace(hour=7, minute=0, second=0, microsecond=0)
     )
-
     task = Task(
         date_created=now_utc(),
         last_edited_time=now_utc(),
@@ -307,7 +305,7 @@ def test_schedule_parses_task():
         due_date=today - relativedelta(days=3),
     )
     schedule = Schedule(task)
-    assert schedule._at_time == time(hour=7, minute=0).replace(tzinfo=tzlocal())
+    assert schedule._at_time == time(hour=7, minute=0).replace(tzinfo=today.tzinfo)
     assert schedule._base == task.last_edited_time
     assert schedule._days == None
     assert schedule._interval == Interval.DAYS
@@ -321,7 +319,7 @@ def test_schedule_parses_task():
         due_date=today - relativedelta(days=3),
     )
     schedule = Schedule(task)
-    assert schedule._at_time == time(hour=7, minute=0).replace(tzinfo=tzlocal())
+    assert schedule._at_time == time(hour=7, minute=0).replace(tzinfo=today.tzinfo)
     assert schedule._base == task.due_date
     assert schedule._days == None
     assert schedule._interval == Interval.DAYS
@@ -335,7 +333,7 @@ def test_schedule_parses_task():
         due_date=today - relativedelta(days=3),
     )
     schedule = Schedule(task)
-    assert schedule._at_time == time(hour=0, minute=0).replace(tzinfo=tzlocal())
+    assert schedule._at_time == time(hour=0, minute=0).replace(tzinfo=today.tzinfo)
     assert schedule._base == task.due_date
     assert schedule._days == None
     assert schedule._interval == Interval.WEEKS
@@ -349,7 +347,7 @@ def test_schedule_parses_task():
         due_date=today - relativedelta(days=3),
     )
     schedule = Schedule(task)
-    assert schedule._at_time == time(hour=0, minute=0).replace(tzinfo=tzlocal())
+    assert schedule._at_time == time(hour=0, minute=0).replace(tzinfo=today.tzinfo)
     assert schedule._base == task.due_date
     assert schedule._days == [1, 2, 3, 5]
     assert schedule._interval == Interval.WEEKS

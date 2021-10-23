@@ -10,7 +10,6 @@ from typing import List, Optional, Tuple
 from croniter import croniter
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
-from dateutil.tz import tzlocal
 from loguru import logger
 
 from notion import Task, now_utc
@@ -115,7 +114,7 @@ class Schedule:
         start_from: Optional[StartFrom] = None
 
         # Default time due is at the end of the day (midnight).
-        today_at_desired_time = parser.parse("12am").replace(tzinfo=tzlocal())
+        today_at_desired_time = parser.parse("12am")
         for c in components[1:]:
             # Check if it's of the form "from due date/start"
             if c.startswith("from"):
@@ -135,7 +134,7 @@ class Schedule:
                     # Otherwise, we expect this to be a set of numeric days of the week/month/year
                     self._days = parse_days(c)
             elif c.startswith("at"):
-                today_at_desired_time = parser.parse(c[3:]).replace(tzinfo=tzlocal())
+                today_at_desired_time = parser.parse(c[3:])
 
         # Now, check some of our configuration and make sure the base is set appropriately.
         # We set the base depending on `start_from`.
@@ -149,7 +148,7 @@ class Schedule:
         self._at_time = time(
             hour=today_at_desired_time.hour,
             minute=today_at_desired_time.minute,
-            tzinfo=today_at_desired_time.tzinfo,
+            tzinfo=self._base.tzinfo,
         )
         logger.info(
             f"Schedule for task {task.name} has base {self._base}, at_time {self._at_time}"
@@ -391,7 +390,7 @@ def get_base(
             f"Cannot determine base for task '{task.name}' starting from {start_from.name}."
         )
 
-    return base
+    return base.astimezone()
 
 
 def handle_special_cases(to_parse: str) -> str:
