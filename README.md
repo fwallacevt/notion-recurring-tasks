@@ -1,8 +1,17 @@
 # Notion extensions
 
+![Recurring tasks](https://github.com/fwallacevt/notion-recurring-tasks/actions/workflows/run-recurring-tasks.yml/badge.svg)
+
 This project aims to extend [Notion's](https://www.notion.so/product) functionality to work more broadly for a variety
 of users and provide a skeleton for other developers to create well-formulated extensions using [Notion's
 API](https://developers.notion.com/).
+
+- [Description](#description)
+- [Features](#features)
+  - [Recurring tasks for todo lists](#recurring-tasks-for-todo-lists)
+  - [Habit tracking](#habit-tracking)
+  - [Interfacing with Google Calendar](#interfacing-with-google-calendar)
+  - [Dashboard generation](#dashboard-generation)
 
 ## Description
 
@@ -25,10 +34,9 @@ advantages:
   make it simple to develop clean extensions for most use cases
 
 Different extensions are run using [GitHub actions](https://github.com/features/actions) for simplicity. Secrets can
-easily be stored to be passed to actions, and schedules or triggers can be customized. For an example of setting up
-actions, see below.
-TODO(fwallace): Link to recurring tasks for todo lists section (below).
-TODO(fwallace): Table of contents
+easily [be
+stored](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository)
+to be passed to actions, and schedules or triggers can be customized. For an example of setting up actions, see below.
 
 This project's primary value is as an example for others to use when developing against Notion's API.
 
@@ -88,7 +96,7 @@ may also use your own databases, with the following requirements:
   - name (title)
   - last_edited_time (datetime)
   - done (checkbox)
-  - status (select; with option "to do"
+  - status (select; with option "to do")
   - due date (datetime)
   - schedule (str)
 - The database you store executions in must have:
@@ -128,6 +136,10 @@ Coming soon!
 
 Coming soon!
 
+## Usage
+
+###
+
 ## TODOs
 
 - [x] Add comments/doc strings
@@ -156,11 +168,11 @@ Coming soon!
 - [x] Add better comments around scheduling - what's supported, specifically?
 - [ ] Flesh out README/documentation
   - [ ] Add a badge?
-  - [ ] Add a code coverage badge (and ignore notion/ for coverage)
 - [ ] Get Eric's review
 - [ ] Sync with Google calendar
 - [ ] Sync with Asana (tasks assigned in Asana get copied over)
 - [ ] Post on Reddit?
+- [ ] Add a code coverage badge (and ignore notion/\* for coverage)
 - [ ] Extend schedule to support:
   - Every (X) months on the (first/second/third/fourth/fifth/last) (monday/tuesday/wednesday/...)
   - Every (X) months on the (first/last) workday
