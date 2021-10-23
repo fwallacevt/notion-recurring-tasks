@@ -104,8 +104,7 @@ may also use your own databases, with the following requirements:
   - name (title)
   - date_created (datetime)
 
-_*If you create your own databases, you will need to regenerate ORM classes.*_
-TODO(fwallace): Link to "regenerate ORM classes"
+_*If you create your own databases, you will need to [regenerate ORM classes](./docs/orm-usage.md).*_
 
 Once your databases are created, [create an
 integration](https://developers.notion.com/docs/getting-started#step-1-create-an-integration) and [give it access to
@@ -122,8 +121,8 @@ on your fork:
   Members" -> "Integrations", clicking the ellipsis next to your api key, and selecting "Copy internal integration
   token")
 
-And just like that, you should be good to go! Now, you can [customize your databases] or [the extension's schedule].
-TODO(fwallace): Links!
+And just like that, you should be good to go! Now, you can [customize your databases](./docs/orm-usage.md) or [the
+extension's schedule](./customizing-schedules.md).
 
 ### Habit tracking
 
@@ -139,7 +138,9 @@ Coming soon!
 
 ## Usage
 
-###
+- [How to develop](./docs/developing.md)
+- [How to use the ORM wrapper](./docs/orm-usage.md)
+- [Customize schedules or triggers](./docs/customizing-schedules.md)
 
 ## TODOs
 
@@ -167,9 +168,10 @@ Coming soon!
 - [x] Lots of logging
 - [ ] Resolve todos
 - [x] Add better comments around scheduling - what's supported, specifically?
-- [ ] Flesh out README/documentation
-  - [x] Add a badge?
-- [ ] Get Eric's review
+- [x] Flesh out README/documentation
+  - [x] Add a badge for runnion Notion
+  - [x] Add a badge for tests
+- [x] Get Eric's/Seamus' review
 - [ ] Sync with Google calendar
 - [ ] Sync with Asana (tasks assigned in Asana get copied over)
 - [ ] Post on Reddit?
