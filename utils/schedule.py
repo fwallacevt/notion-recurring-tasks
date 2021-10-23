@@ -175,7 +175,7 @@ def get_next(
 ) -> datetime:
     """Get the next due date, starting from the given base."""
     logger.info(
-        f"Getting next due date with base {base}, interval {interval.name}, frequencey {frequency}, at_time {at_time}, and days {days}"
+        f"Getting next due date with base {base}, interval {interval.name}, frequency {frequency}, at_time {at_time}, and days {days}"
     )
     # TODO(fwallace): How do we deal with the desired time (e.g. if I have a task every
     # day at 9am, and I completed it today at 1am, how do I ensure it is recreated for
@@ -341,7 +341,7 @@ def get_next(
         hour=at_time.hour, minute=at_time.minute, second=0, microsecond=0
     )
     logger.info(
-        f"Next due date with base {base}, interval {interval.name}, frequencey {frequency}, at_time {at_time}, and days {days}: {next_due_date}"
+        f"Next due date with base {base}, interval {interval.name}, frequency {frequency}, at_time {at_time}, and days {days}: {next_due_date}"
     )
     return next_due_date
 
