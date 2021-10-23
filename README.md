@@ -171,8 +171,9 @@ Coming soon!
   - [x] Add a badge for runnion Notion
   - [x] Add a badge for tests
 - [x] Get Eric's/Seamus' review
-- [ ] Sync with Google calendar
+- [ ] Create Notion daily/weekly dashboard
 - [ ] Sync with Asana (tasks assigned in Asana get copied over)
+- [ ] Sync with Google calendar
 - [ ] Resolve todos
 - [ ] Post on Reddit?
 - [ ] Add a code coverage badge (and ignore notion/\* for coverage) (https://github.com/marketplace/actions/dynamic-badges)
