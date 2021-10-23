@@ -23,8 +23,8 @@ on:
 
 jobs:
   uses: szenius/set-timezone@v1.0
-    with:
-      timezoneLinux: "America/New York"
+  with:
+    timezoneLinux: "America/New York"
   # Test our various workers.
   test_workers:
     runs-on: ubuntu-latest
