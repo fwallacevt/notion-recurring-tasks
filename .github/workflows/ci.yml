@@ -23,17 +23,9 @@ on:
     branches: [main]
 
 jobs:
-  # uses: szenius/set-timezone@v1.0
-  # with:
-  #   timezoneLinux: "America/New York"
-  # Test our various workers.
   test_workers:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup timezone
-        uses: zcong1993/setup-timezone@master
-        with:
-          timezone: America/New York
       - uses: actions/checkout@v2
       - name: setup python
         uses: actions/setup-python@v2
