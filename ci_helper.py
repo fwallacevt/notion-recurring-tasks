@@ -26,7 +26,9 @@ try:
     pipenv_run("isort", "--version")
     pipenv_run("check")
 except Exception as e:
-    print("Failed formatting check; please run 'pipenv run format' and re-commit")
+    print(
+        "Failed formatting check; please run 'pipenv run format' and re-commit"
+    )
     raise e
 
 
@@ -36,6 +38,7 @@ def pytest(*args: str):
         "pytest",
         "--log-level=debug",
         "--capture=no",
+        "tests/utils/test_schedule.py::test_get_next_specific_days",
         *args,
     )
 
