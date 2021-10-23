@@ -36,7 +36,6 @@ def pytest(*args: str):
         "pytest",
         "--log-level=debug",
         "--capture=no",
-        "tests/utils/test_schedule.py::test_get_next_specific_days",
         *args,
     )
 
