@@ -171,7 +171,7 @@ Coming soon!
   - [x] Add a badge for runnion Notion
   - [x] Add a badge for tests
 - [x] Get Eric's/Seamus' review
-- [ ] Fix CI test issue (probably timezone related);
+- [x] Fix CI test issue (probably timezone related);
 - [ ] Implement Seamus' feedback:
   - [ ] [Do "select"/"multi-select" need to be
         enums?](https://github.com/fwallacevt/notion-recurring-tasks/commit/95dd55f7b87cd8d762878a6eecf61317bb82b7af#r58538653)
