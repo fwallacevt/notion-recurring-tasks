@@ -9,7 +9,28 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from typing import Any, Callable, ClassVar, List, Mapping, Optional, Set, Type, TypeVar
 
+from utils.serde import Deserializable, Serializable
+
 from .notion_client import NotionClient
+
+
+class SelectOptions(Deserializable, Serializable):
+    """Options for Notion-style "select" objects."""
+
+    id: Optional[str]
+    name: Optional[str]
+    color: Optional[str]
+
+    def __init__(
+        self,
+        *,
+        id: Optional[str] = None,
+        name: Optional[str] = None,
+        color: Optional[str] = None,
+    ):
+        self.id = id
+        self.name = name
+        self.color = color
 
 
 def now_utc() -> datetime:

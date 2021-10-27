@@ -67,13 +67,17 @@ class Execution(RecordBase):
                 values["Date created"]["created_time"]
             )
         if "Name" in values:
-            new_values["name"] = values["Name"]["title"][0]["plain_text"]
+            new_values["name"] = (
+                None
+                if len(values["Name"]["title"]) < 1
+                else values["Name"]["title"][0]["plain_text"]
+            )
         return new_values
 
     @classmethod
     def serialize_values(cls, values: Mapping[str, Any]) -> Mapping[str, Any]:
         new_values = {}  # Shallow copy and convert.
-        if "name" in values:
+        if "name" in values and values["name"] is not None:
             new_values["Name"] = {
                 "type": "title",
                 "title": [{"type": "text", "text": {"content": values["name"]}}],

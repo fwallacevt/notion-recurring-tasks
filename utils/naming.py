@@ -23,20 +23,9 @@ def singularize(s: str) -> str:
     return re.sub("s$", "", re.sub("ies$", "y", s))
 
 
-def enum_name_to_alias(name: str) -> str:
-    """Convert names like "To do" to "TO_DO"."""
-    return name.replace(" ", "_").upper()
-
-
 def property_name_to_column_name(name: str) -> str:
     """Convert names like "To do" to "to_do"."""
     return name.replace(" ", "_").lower()
-
-
-def property_to_enum_class_name(name: str) -> str:
-    """Convert names like "Due date" to "DueDate"."""
-    components = name.split(" ")
-    return "".join(c.capitalize() for c in components)
 
 
 def table_to_class_name(name: str) -> str:

@@ -9,7 +9,5 @@ from uuid import UUID
 
 import dateutil.parser
 
-from utils.naming import enum_name_to_alias
-
 from .notion_client import NotionClient
-from .orm import RecordBase, now_utc
+from .orm import RecordBase, SelectOptions, now_utc

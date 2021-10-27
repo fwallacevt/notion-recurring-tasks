@@ -7,31 +7,6 @@ from .default_imports import *  # pylint: disable=unused-wildcard-import
 # == END CUSTOM IMPORTS ==
 
 
-class Status(Enum):
-    "Enum for Status values, mapping name to id."
-
-    TO_DO = "955347da-4f72-43cb-94f9-83671b141073"
-    DOING = "afb8057f-c5cb-4012-9aa6-83c64d9de472"
-    DONE = "fa612bba-7f5e-4549-8fc3-966ecd9c46b3"
-
-
-class Priority(Enum):
-    "Enum for Priority values, mapping name to id."
-
-    HIGH = "9fd52657-92f8-4c6e-94a2-196331fc13f0"
-    MEDIUM = "2d89445a-80eb-4be8-9177-3559e736e69c"
-    LOW = "f8de6404-18c0-48bd-a784-add8f4d9239c"
-    NONE = "07242016-f132-4b9d-9489-5ca7b7774ffd"
-
-
-class Tags(Enum):
-    "Enum for Tags values, mapping name to id."
-
-    HOUSE = "63659d8d-27e0-43f0-a29a-ecba965342d4"
-    ELECTRICAL = "2151a861-9f25-4bf6-979f-0f5c0efd5b5a"
-    PERSONAL = "c2f72d3c-90ed-488f-902b-636bf13b7ef7"
-
-
 class Task(RecordBase):
     "ORM wrapper for row in `tasks`."
     _column_names: ClassVar[Set[str]] = {
@@ -62,10 +37,10 @@ class Task(RecordBase):
         last_edited_time: datetime,
         name: str,
         done: Optional[bool] = None,
-        status: Optional[Status] = None,
+        status: Optional[SelectOptions] = None,
         schedule: Optional[str] = None,
-        priority: Optional[Priority] = None,
-        tags: Optional[List[Tags]] = None,
+        priority: Optional[SelectOptions] = None,
+        tags: Optional[List[SelectOptions]] = None,
         due_date: Optional[datetime] = None,
     ):
         # Initialize the superclass first
@@ -109,11 +84,11 @@ class Task(RecordBase):
         self.mark_column_changed("done")
 
     @property
-    def status(self) -> Optional[Status]:
+    def status(self) -> Optional[SelectOptions]:
         return self.__status
 
     @status.setter
-    def status(self, value: Optional[Status]):
+    def status(self, value: Optional[SelectOptions]):
         self.__status = value
         self.mark_column_changed("status")
 
@@ -127,20 +102,20 @@ class Task(RecordBase):
         self.mark_column_changed("schedule")
 
     @property
-    def priority(self) -> Optional[Priority]:
+    def priority(self) -> Optional[SelectOptions]:
         return self.__priority
 
     @priority.setter
-    def priority(self, value: Optional[Priority]):
+    def priority(self, value: Optional[SelectOptions]):
         self.__priority = value
         self.mark_column_changed("priority")
 
     @property
-    def tags(self) -> Optional[List[Tags]]:
+    def tags(self) -> Optional[List[SelectOptions]]:
         return self.__tags
 
     @tags.setter
-    def tags(self, value: Optional[List[Tags]]):
+    def tags(self, value: Optional[List[SelectOptions]]):
         self.__tags = value
         self.mark_column_changed("tags")
 
@@ -181,68 +156,90 @@ class Task(RecordBase):
         if "Done" in values:
             new_values["done"] = values["Done"]["checkbox"]
         if "Status" in values:
-            new_values["status"] = Status[
-                enum_name_to_alias(values["Status"]["select"]["name"])
-            ]
+            new_values["status"] = (
+                None
+                if values["Status"]["select"] is None
+                else SelectOptions.from_json(values["Status"]["select"])
+            )
         if "Schedule" in values:
-            new_values["schedule"] = values["Schedule"]["rich_text"][0]["plain_text"]
+            new_values["schedule"] = (
+                None
+                if len(values["Schedule"]["rich_text"]) < 1
+                else values["Schedule"]["rich_text"][0]["plain_text"]
+            )
         if "Priority" in values:
-            new_values["priority"] = Priority[
-                enum_name_to_alias(values["Priority"]["select"]["name"])
-            ]
+            new_values["priority"] = (
+                None
+                if values["Priority"]["select"] is None
+                else SelectOptions.from_json(values["Priority"]["select"])
+            )
         if "Tags" in values:
             new_values["tags"] = [
-                Tags[enum_name_to_alias(t["name"])]
-                for t in values["Tags"]["multi_select"]
+                SelectOptions.from_json(t) for t in values["Tags"]["multi_select"]
             ]
         if "Due date" in values:
-            new_values["due_date"] = dateutil.parser.isoparse(
-                values["Due date"]["date"]["start"]
+            new_values["due_date"] = (
+                None
+                if values["Due date"]["date"] is None
+                else dateutil.parser.isoparse(values["Due date"]["date"]["start"])
             )
         if "Last edited time" in values:
             new_values["last_edited_time"] = dateutil.parser.isoparse(
                 values["Last edited time"]["last_edited_time"]
             )
         if "Name" in values:
-            new_values["name"] = values["Name"]["title"][0]["plain_text"]
+            new_values["name"] = (
+                None
+                if len(values["Name"]["title"]) < 1
+                else values["Name"]["title"][0]["plain_text"]
+            )
         return new_values
 
     @classmethod
     def serialize_values(cls, values: Mapping[str, Any]) -> Mapping[str, Any]:
         new_values = {}  # Shallow copy and convert.
-        if "done" in values:
+        if "done" in values and values["done"] is not None:
             new_values["Done"] = {
                 "type": "checkbox",
                 "checkbox": values["done"],
             }
-        if "status" in values:
+        if "status" in values and values["status"] is not None:
             new_values["Status"] = {
                 "type": "select",
-                "select": {"id": (values["status"]).value},
+                "select": {
+                    k: v for k, v in values["status"].to_json().items() if v is not None
+                },
             }
-        if "schedule" in values:
+        if "schedule" in values and values["schedule"] is not None:
             new_values["Schedule"] = {
                 "type": "rich_text",
                 "rich_text": [
                     {"type": "text", "text": {"content": values["schedule"]}}
                 ],
             }
-        if "priority" in values:
+        if "priority" in values and values["priority"] is not None:
             new_values["Priority"] = {
                 "type": "select",
-                "select": {"id": (values["priority"]).value},
+                "select": {
+                    k: v
+                    for k, v in values["priority"].to_json().items()
+                    if v is not None
+                },
             }
-        if "tags" in values:
+        if "tags" in values and values["tags"] is not None:
             new_values["Tags"] = {
                 "type": "multi_select",
-                "multi_select": [{"id": v.value} for v in values["tags"]],
+                "multi_select": [
+                    {k: v for k, v in i.to_json().items() if v is not None}
+                    for i in values["tags"]
+                ],
             }
-        if "due_date" in values:
+        if "due_date" in values and values["due_date"] is not None:
             new_values["Due date"] = {
                 "type": "date",
                 "date": {"start": values["due_date"].isoformat()},
             }
-        if "name" in values:
+        if "name" in values and values["name"] is not None:
             new_values["Name"] = {
                 "type": "title",
                 "title": [{"type": "text", "text": {"content": values["name"]}}],
