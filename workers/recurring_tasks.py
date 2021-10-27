@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 from loguru import logger
 
 from notion import Execution, NotionClient, Task
-from notion.orm import now_utc
+from notion.orm import SelectOptions, now_utc
 from utils.schedule import get_next_due_date
 
 
@@ -44,6 +44,7 @@ def create_new_recurring_tasks(client: NotionClient, tasks: List[Task]):
                 f"Creating new task {t.name}, with new due date {next_due} (previously {t.due_date})"
             )
             t.due_date = next_due.astimezone()
+            t.status = SelectOptions(name="To do")
             t.done = False
             t.insert(client)
         except Exception as e:
