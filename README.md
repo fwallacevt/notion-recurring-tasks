@@ -178,7 +178,7 @@ Coming soon!
   - [x] Can I set a select/multiselect with id/name/color Null?
   - [ ] [Add
         quickstart](https://github.com/fwallacevt/notion-recurring-tasks/commit/fbc5119588e3cf183697d3ac1d83faceb31723d1#r58538760)
-- [ ] Set status when saving new tasks
+- [x] Set status when saving new tasks
 - [ ] Implement [Eric's feedback](https://faradayio.slack.com/archives/DN6PMFWAE/p1635116064016800)
   - [ ] Try extracting some smaller functions from the big ones. Hang some off of AST types?
   - [ ] Review [ASTs](https://en.wikipedia.org/wiki/Abstract_syntax_tree) - can I apply?
