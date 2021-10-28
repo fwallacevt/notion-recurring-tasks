@@ -176,16 +176,13 @@ Coming soon!
   - [x] Add a badge for tests
 - [x] Get Eric's/Seamus' review
 - [x] Fix CI test issue (probably timezone related);
-- [ ] Implement Seamus' feedback:
+- [x] Implement Seamus' feedback:
   - [x] [Do "select"/"multi-select" need to be
         enums?](https://github.com/fwallacevt/notion-recurring-tasks/commit/95dd55f7b87cd8d762878a6eecf61317bb82b7af#r58538653)
   - [x] Can I set a select/multiselect with id/name/color Null?
-  - [ ] [Add
+  - [x] [Add
         quickstart](https://github.com/fwallacevt/notion-recurring-tasks/commit/fbc5119588e3cf183697d3ac1d83faceb31723d1#r58538760)
 - [x] Set status when saving new tasks
-- [ ] Implement [Eric's feedback](https://faradayio.slack.com/archives/DN6PMFWAE/p1635116064016800)
-  - [ ] Try extracting some smaller functions from the big ones. Hang some off of AST types?
-  - [ ] Review [ASTs](https://en.wikipedia.org/wiki/Abstract_syntax_tree) - can I apply?
 - [ ] Create Notion daily/weekly dashboard
 - [ ] Sync with Asana (tasks assigned in Asana get copied over)
 - [ ] Sync with Google calendar
@@ -194,6 +191,9 @@ Coming soon!
         Notion -> Google? Could subscribe to gmail push notifications and do it that way? This would necessitate a
         serverless architecture
 - [ ] Resolve todos
+- [ ] Implement [Eric's feedback](https://faradayio.slack.com/archives/DN6PMFWAE/p1635116064016800)
+  - [ ] Try extracting some smaller functions from the big ones. Hang some off of AST types?
+  - [ ] Review [ASTs](https://en.wikipedia.org/wiki/Abstract_syntax_tree) - can I apply?
 - [ ] Post on Reddit?
 - [ ] Add a code coverage badge (and ignore notion/\* for coverage) (https://github.com/marketplace/actions/dynamic-badges)
 - [ ] Extend schedule to support:
