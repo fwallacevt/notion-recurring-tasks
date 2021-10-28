@@ -34,12 +34,34 @@ python db2py.py $DATABASE_ID $DATABASE_NAME | pbcopy
 
 ## Programmatic usage
 
-The ORM layer provides a clean, simple interface to Notion's databases. For example, we use it to find all recurring
-tasks completed since a certain date:
+The ORM layer provides a clean, simple interface to Notion's databases. Queries must be constructed using Notion's
+["filter" syntax](https://developers.notion.com/reference/post-database-query#post-database-query-filter). Some
+examples:
 
 ```py
-from notion import Task
+from os import environ
 
+from notion import NotionClient, MyDatabase, Task
+
+# Assuming `NOTION_API_KEY` is set in your environment
+client = NotionClient(api_key=environ["NOTION_API_KEY"])
+
+# Find all records in your database
+things = MyDatabase.find_all_by(client)
+
+# Find all records in your database with my_field="Hello world!"
+things = MyDatabase.find_all_by(
+    client,
+    {
+        {
+            "property": "my_field",
+            "equals": "Hello world!"
+        }
+    },
+)
+
+# Find all recurring tasks completed since a certain date. Returns an array of `Task` objects that
+# match the given criteria
 tasks = Task.find_all_by(
     client,
     {
@@ -65,7 +87,10 @@ tasks = Task.find_all_by(
         ]
     },
 )
+
+# Create and insert a new record
+task = Task(name="New task")
+task.insert(client)
 ```
 
-This returns an array of `Task` objects that match the given criteria. The ORM layer provides many utilities in addition
-to `find_all_by`.
+The ORM layer provides many utilities in addition to `find_all_by`.

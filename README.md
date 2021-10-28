@@ -41,6 +41,16 @@ to be passed to actions, and schedules or triggers can be customized. For an exa
 
 This project's primary value is as an example for others to use when developing against Notion's API.
 
+## Basic usage
+
+- [How to develop](./docs/developing.md)
+- [How to use the ORM wrapper](./docs/orm-usage.md)
+- [Customize schedules or triggers](./docs/customizing-schedules.md)
+
+The core value of this project is its wrapper around Notion databases (which can be extended to generic pages). Once
+you've [generated the Python wrapper for your database](./docs/orm-usage.md#generating-or-updating-orm-classes), you can
+[query Notion incredibly easily](./docs/orm-usage.md#programmatic-usage).
+
 ## Features
 
 The following features are supported by this project.
@@ -135,12 +145,6 @@ Coming soon!
 ### Dashboard generation
 
 Coming soon!
-
-## Usage
-
-- [How to develop](./docs/developing.md)
-- [How to use the ORM wrapper](./docs/orm-usage.md)
-- [Customize schedules or triggers](./docs/customizing-schedules.md)
 
 ## TODOs
 
