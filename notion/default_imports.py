@@ -1,10 +1,9 @@
 """Standard imports used by subclasses of `RecordBase`."""
 
 import os
-from datetime import date as datetime_date
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from enum import Enum
-from typing import Any, ClassVar, Dict, List, Mapping, Optional, Set
+from typing import Any, ClassVar, Dict, List, Mapping, Optional, Set, Union
 from uuid import UUID
 
 import dateutil.parser
