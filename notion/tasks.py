@@ -17,7 +17,6 @@ class Task(RecordBase):
         "name",
         "priority",
         "schedule",
-        "status",
         "tags",
     }
 
@@ -37,7 +36,6 @@ class Task(RecordBase):
         last_edited_time: datetime,
         name: str,
         done: Optional[bool] = None,
-        status: Optional[SelectOptions] = None,
         schedule: Optional[str] = None,
         priority: Optional[SelectOptions] = None,
         tags: Optional[List[SelectOptions]] = None,
@@ -54,7 +52,6 @@ class Task(RecordBase):
         # making all of our member variables typed.
         self.__date_created = date_created
         self.__done = done
-        self.__status = status
         self.__schedule = schedule
         self.__priority = priority
         self.__tags = tags
@@ -82,15 +79,6 @@ class Task(RecordBase):
     def done(self, value: Optional[bool]):
         self.__done = value
         self.mark_column_changed("done")
-
-    @property
-    def status(self) -> Optional[SelectOptions]:
-        return self.__status
-
-    @status.setter
-    def status(self, value: Optional[SelectOptions]):
-        self.__status = value
-        self.mark_column_changed("status")
 
     @property
     def schedule(self) -> Optional[str]:
@@ -147,7 +135,9 @@ class Task(RecordBase):
         self.mark_column_changed("name")
 
     @classmethod
-    def deserialize_values(cls, values: Mapping[str, Any]) -> Mapping[str, Any]:
+    def deserialize_values(
+        cls, values: Mapping[str, Any]
+    ) -> Mapping[str, Any]:
         new_values: Dict[str, Any] = {}
         if "Date created" in values:
             new_values["date_created"] = dateutil.parser.isoparse(
@@ -155,12 +145,6 @@ class Task(RecordBase):
             )
         if "Done" in values:
             new_values["done"] = values["Done"]["checkbox"]
-        if "Status" in values:
-            new_values["status"] = (
-                None
-                if values["Status"]["select"] is None
-                else SelectOptions.from_json(values["Status"]["select"])
-            )
         if "Schedule" in values:
             new_values["schedule"] = (
                 None
@@ -175,13 +159,16 @@ class Task(RecordBase):
             )
         if "Tags" in values:
             new_values["tags"] = [
-                SelectOptions.from_json(t) for t in values["Tags"]["multi_select"]
+                SelectOptions.from_json(t)
+                for t in values["Tags"]["multi_select"]
             ]
         if "Due date" in values:
             new_values["due_date"] = (
                 None
                 if values["Due date"]["date"] is None
-                else dateutil.parser.isoparse(values["Due date"]["date"]["start"])
+                else dateutil.parser.isoparse(
+                    values["Due date"]["date"]["start"]
+                )
             )
         if "Last edited time" in values:
             new_values["last_edited_time"] = dateutil.parser.isoparse(
@@ -202,13 +189,6 @@ class Task(RecordBase):
             new_values["Done"] = {
                 "type": "checkbox",
                 "checkbox": values["done"],
-            }
-        if "status" in values and values["status"] is not None:
-            new_values["Status"] = {
-                "type": "select",
-                "select": {
-                    k: v for k, v in values["status"].to_json().items() if v is not None
-                },
             }
         if "schedule" in values and values["schedule"] is not None:
             new_values["Schedule"] = {
@@ -242,7 +222,9 @@ class Task(RecordBase):
         if "name" in values and values["name"] is not None:
             new_values["Name"] = {
                 "type": "title",
-                "title": [{"type": "text", "text": {"content": values["name"]}}],
+                "title": [
+                    {"type": "text", "text": {"content": values["name"]}}
+                ],
             }
         return new_values
 
