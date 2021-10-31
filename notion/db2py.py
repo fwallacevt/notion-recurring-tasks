@@ -205,7 +205,7 @@ class DateType(PropertyType):
 
     def python_type(self) -> str:
         """The type to use for our member variable in Python."""
-        return "datetime"
+        return "Union[date, datetime]"
 
     def deserialization_expr(self, value_expr: str) -> str:
         """Take an expression returning a database value, and return an
