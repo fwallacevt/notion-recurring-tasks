@@ -190,6 +190,9 @@ Coming soon!
   - [ ] Use Notion [notifications](https://www.notion.so/Notification-settings-94f63a146f864552abba335881848947) to sync
         Notion -> Google? Could subscribe to gmail push notifications and do it that way? This would necessitate a
         serverless architecture
+- [ ] Make everything async
+  - [ ] Should create new tasks in parallel and be resilient if one fails
+- [ ] Improve Schedule utility to return a date if there is no time component
 - [ ] Resolve todos
 - [ ] Implement [Eric's feedback](https://faradayio.slack.com/archives/DN6PMFWAE/p1635116064016800)
   - [ ] Try extracting some smaller functions from the big ones. Hang some off of AST types?
