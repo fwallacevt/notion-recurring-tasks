@@ -1,7 +1,8 @@
 """Update our recurring tasks database."""
 
+from datetime import date, datetime
 from os import environ
-from typing import List, Optional
+from typing import List, Optional, Union
 from zoneinfo import ZoneInfo
 
 from loguru import logger
@@ -9,6 +10,14 @@ from loguru import logger
 from notion import Execution, NotionClient, Task
 from notion.orm import now_utc
 from utils.schedule import get_next_due_date
+
+
+def date_if_midnight(d: datetime) -> Union[date, datetime]:
+    """If the time component of the datetime is zeroed, convert to a date."""
+    if d.hour == d.minute == d.second == d.microsecond == 0:
+        logger.info(f"Converting {d} to date")
+        return date(d.year, d.month, d.day)
+    return d
 
 
 def create_new_recurring_tasks(client: NotionClient, tasks: List[Task]):
@@ -25,27 +34,23 @@ def create_new_recurring_tasks(client: NotionClient, tasks: List[Task]):
         try:
             exists = Task.check_open_task_exists_by_name(client, t.name)
             if exists:
-                logger.info(
-                    f"There is an open task with name {t.name} - skipping"
-                )
+                logger.info(f"There is an open task with name {t.name} - skipping")
                 continue
 
             # Get the next due date, then make sure that we convert to EST so that Notion will display
             # correctly
-            # TODO(fwallace): When I'm formatting the due date, I should remove the time
-            # component if it's all zeroes (actually requires changes to ORM)
-            # TODO(fwallace): Confirm that this will confirm a due date _in local time_ (make sure that
-            # timestamps on the objects are parsed as UTC or local time, consistently)
-            # TODO(fwallace): Confirm that this will set the due date in notion _in local time_ (make sure
-            # that due dates are set as local time)
             # TODO(fwallace): What will local time look like if we're running on GitHub runners? How
             # do we know what local time zone is?
             next_due = get_next_due_date(t)
+            # TODO(fwallace): The appropriate way to do this would actually be to generate the next due
+            # date as a `date` object, rather than `datetime`, if there is no time component. That is
+            # more involved and will have to come later.
+            next_due = date_if_midnight(next_due.astimezone())
 
             logger.info(
                 f"Creating new task {t.name}, with new due date {next_due} (previously {t.due_date})"
             )
-            t.due_date = next_due.astimezone()
+            t.due_date = next_due
             t.done = False
             t.insert(client)
         except Exception as e:
@@ -71,7 +76,9 @@ def handle_recurring_tasks():
 
     # Query all tasks in our database that have been modified since that time
     tasks_to_recreate = Task.find_completed_recurring_tasks_since(client, ts)
-    logger.info(f"Found {len(tasks_to_recreate)} recurring tasks to make...")
+    logger.info(
+        f"Found {len(tasks_to_recreate)} recurring tasks to make: {[t.name for t in tasks_to_recreate]}"
+    )
 
     # Now, for each of these recurring tasks, we have to create a new task
     # for the next time that schedule should execute (unless there's an outstanding
@@ -85,4 +92,4 @@ def handle_recurring_tasks():
         name=f"""Execution ts: {now.astimezone().isoformat()}""",
     )
     logger.info(f"Creating new execution record {execution.name}")
-    execution.insert(client)
+    # execution.insert(client)

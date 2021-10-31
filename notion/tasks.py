@@ -39,7 +39,7 @@ class Task(RecordBase):
         schedule: Optional[str] = None,
         priority: Optional[SelectOptions] = None,
         tags: Optional[List[SelectOptions]] = None,
-        due_date: Optional[datetime] = None,
+        due_date: Optional[Union[date, datetime]] = None,
     ):
         # Initialize the superclass first
         super().__init__(name)
@@ -108,11 +108,11 @@ class Task(RecordBase):
         self.mark_column_changed("tags")
 
     @property
-    def due_date(self) -> Optional[datetime]:
+    def due_date(self) -> Optional[Union[date, datetime]]:
         return self.__due_date
 
     @due_date.setter
-    def due_date(self, value: Optional[datetime]):
+    def due_date(self, value: Optional[Union[date, datetime]]):
         self.__due_date = value
         self.mark_column_changed("due_date")
 
@@ -135,9 +135,7 @@ class Task(RecordBase):
         self.mark_column_changed("name")
 
     @classmethod
-    def deserialize_values(
-        cls, values: Mapping[str, Any]
-    ) -> Mapping[str, Any]:
+    def deserialize_values(cls, values: Mapping[str, Any]) -> Mapping[str, Any]:
         new_values: Dict[str, Any] = {}
         if "Date created" in values:
             new_values["date_created"] = dateutil.parser.isoparse(
@@ -159,16 +157,13 @@ class Task(RecordBase):
             )
         if "Tags" in values:
             new_values["tags"] = [
-                SelectOptions.from_json(t)
-                for t in values["Tags"]["multi_select"]
+                SelectOptions.from_json(t) for t in values["Tags"]["multi_select"]
             ]
         if "Due date" in values:
             new_values["due_date"] = (
                 None
                 if values["Due date"]["date"] is None
-                else dateutil.parser.isoparse(
-                    values["Due date"]["date"]["start"]
-                )
+                else dateutil.parser.isoparse(values["Due date"]["date"]["start"])
             )
         if "Last edited time" in values:
             new_values["last_edited_time"] = dateutil.parser.isoparse(
@@ -222,9 +217,7 @@ class Task(RecordBase):
         if "name" in values and values["name"] is not None:
             new_values["Name"] = {
                 "type": "title",
-                "title": [
-                    {"type": "text", "text": {"content": values["name"]}}
-                ],
+                "title": [{"type": "text", "text": {"content": values["name"]}}],
             }
         return new_values
 
