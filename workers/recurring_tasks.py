@@ -34,9 +34,7 @@ def create_new_recurring_tasks(client: NotionClient, tasks: List[Task]):
         try:
             exists = Task.check_open_task_exists_by_name(client, t.name)
             if exists:
-                logger.info(
-                    f"There is an open task with name {t.name} - skipping"
-                )
+                logger.info(f"There is an open task with name {t.name} - skipping")
                 continue
 
             # Get the next due date, then make sure that we convert to EST so that Notion will display
@@ -53,9 +51,7 @@ def create_new_recurring_tasks(client: NotionClient, tasks: List[Task]):
                 f"Creating new task {t.name}, with new due date {next_due} (previously {t.due_date})"
             )
             t.due_date = (
-                next_due.astimezone()
-                if isinstance(next_due, datetime)
-                else next_due
+                next_due.astimezone() if isinstance(next_due, datetime) else next_due
             )
             t.done = False
             t.insert(client)
