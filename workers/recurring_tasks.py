@@ -3,7 +3,6 @@
 from datetime import date, datetime
 from os import environ
 from typing import List, Optional, Union
-from zoneinfo import ZoneInfo
 
 from loguru import logger
 
@@ -14,6 +13,7 @@ from utils.schedule import get_next_due_date
 
 def date_if_midnight(d: datetime) -> Union[date, datetime]:
     """If the time component of the datetime is zeroed, convert to a date."""
+    logger.info(f"Checking if datetime {d} has a time component...")
     if d.hour == d.minute == d.second == d.microsecond == 0:
         logger.info(f"Converting {d} to date")
         return date(d.year, d.month, d.day)
@@ -34,7 +34,9 @@ def create_new_recurring_tasks(client: NotionClient, tasks: List[Task]):
         try:
             exists = Task.check_open_task_exists_by_name(client, t.name)
             if exists:
-                logger.info(f"There is an open task with name {t.name} - skipping")
+                logger.info(
+                    f"There is an open task with name {t.name} - skipping"
+                )
                 continue
 
             # Get the next due date, then make sure that we convert to EST so that Notion will display
@@ -45,12 +47,16 @@ def create_new_recurring_tasks(client: NotionClient, tasks: List[Task]):
             # TODO(fwallace): The appropriate way to do this would actually be to generate the next due
             # date as a `date` object, rather than `datetime`, if there is no time component. That is
             # more involved and will have to come later.
-            next_due = date_if_midnight(next_due.astimezone())
+            next_due = date_if_midnight(next_due)
 
             logger.info(
                 f"Creating new task {t.name}, with new due date {next_due} (previously {t.due_date})"
             )
-            t.due_date = next_due
+            t.due_date = (
+                next_due.astimezone()
+                if isinstance(next_due, datetime)
+                else next_due
+            )
             t.done = False
             t.insert(client)
         except Exception as e:
@@ -92,4 +98,4 @@ def handle_recurring_tasks():
         name=f"""Execution ts: {now.astimezone().isoformat()}""",
     )
     logger.info(f"Creating new execution record {execution.name}")
-    # execution.insert(client)
+    execution.insert(client)
