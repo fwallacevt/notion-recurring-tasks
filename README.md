@@ -183,6 +183,7 @@ Coming soon!
   - [x] [Add
         quickstart](https://github.com/fwallacevt/notion-recurring-tasks/commit/fbc5119588e3cf183697d3ac1d83faceb31723d1#r58538760)
 - [x] Set status when saving new tasks
+- [ ] Need to set timezone in GitHub runner
 - [ ] Create Notion daily/weekly dashboard
 - [ ] Sync with Asana (tasks assigned in Asana get copied over)
 - [ ] Sync with Google calendar
