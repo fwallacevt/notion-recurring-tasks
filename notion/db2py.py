@@ -245,7 +245,9 @@ class TimestampType(PropertyType):
     def serialization_expr(self, value_expr: str) -> str:
         """Take an expression returning a local value, and return an
         expression that returns a database value."""
-        raise Exception("datatype {self} does not know how to serialize.")
+        raise Exception(
+            f"datatype {self}, value expression {value_expr} does not know how to serialize."
+        )
 
 
 class SelectType(PropertyType):
@@ -431,7 +433,7 @@ class Column:
         """Return an optional `"name": serialize_func(orig.name)` code fragment
         if one will be needed."""
         # These are fields that Notion sets on its end
-        if self.notion_name.lower() in ["last edited time", "date created"]:
+        if self.data_type.type in ["last_edited_time", "created_time"]:
             return None
 
         lvalue = f"values[{repr(self.name)}]"
