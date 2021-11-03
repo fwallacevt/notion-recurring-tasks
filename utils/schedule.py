@@ -180,9 +180,11 @@ def get_next(
     # day at 9am, and I completed it today at 1am, how do I ensure it is recreated for
     # 9am today?) Do I replace hour + minute, and check if the base is < that (e.g.)
     # Make sure we're working with everything as local time
-    base = base.astimezone()
-    next_due_date = base.astimezone()
+    # Standardize on the current timezone, to account for crossing boundaries (e.g. daylight
+    # savings time) if we're comparing dates across boundaries
     now = datetime.now().astimezone()
+    base = base.replace(tzinfo=now.tzinfo)
+    next_due_date = base.replace(tzinfo=now.tzinfo)
 
     logger.info(f"Base in local timezone: {next_due_date}")
 
