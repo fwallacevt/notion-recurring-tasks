@@ -184,13 +184,10 @@ Coming soon!
         quickstart](https://github.com/fwallacevt/notion-recurring-tasks/commit/fbc5119588e3cf183697d3ac1d83faceb31723d1#r58538760)
 - [x] Set status when saving new tasks
 - [ ] Need to set timezone in GitHub runner
-- [ ] Create Notion daily/weekly dashboard
+- [x] Create Notion daily/weekly dashboard
 - [ ] Sync with Asana (tasks assigned in Asana get copied over)
 - [ ] Sync with Google calendar
   - [ ] Use [push notifications](https://developers.google.com/calendar/api/guides/push) to sync Google -> Notion
-  - [ ] Use Notion [notifications](https://www.notion.so/Notification-settings-94f63a146f864552abba335881848947) to sync
-        Notion -> Google? Could subscribe to gmail push notifications and do it that way? This would necessitate a
-        serverless architecture
 - [ ] Make everything async
   - [ ] Should create new tasks in parallel and be resilient if one fails
 - [ ] Improve Schedule utility to return a date if there is no time component
