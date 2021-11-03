@@ -22,6 +22,8 @@ from utils.schedule import (
     parse_weekdays,
 )
 
+# TODO(fwallace): Test get next due date with a Cron string?
+
 
 def test_parse_frequency_and_interval():
     """Unit test for `parse_frequency_and_interval`. This should parse "Every (X) (interval)"."""
@@ -114,7 +116,7 @@ def test_handle_special_cases():
     assert handle_special_cases("Every 1 weeks") == "Every 1 weeks"
 
 
-def test_get_next_no_days():
+def test_get_next_interval_days_no_days():
     """Test that we can get the next due date from an interval, frequency, and base."""
     # Check that it works for an event happening every day (starting from today)
     today = (
@@ -140,6 +142,16 @@ def test_get_next_no_days():
     d = get_next(base - relativedelta(days=1), Interval.DAYS, 2, base_time)
     assert d == (today + relativedelta(days=1))
 
+
+def test_get_next_interval_weeks_no_days():
+    """Test that we can get the next due date from an interval, frequency, and base."""
+    # Check that it works for an event happening every day (starting from today)
+    today = (
+        datetime.now().astimezone().replace(hour=9, minute=30, second=0, microsecond=0)
+    )
+    base_time = time(hour=9, minute=30)
+    base = datetime.now().astimezone()
+
     # ----------------- TEST WEEKS ----------------- #
     # Test that it works with weeks
     d = get_next(base, Interval.WEEKS, 1, base_time)
@@ -157,6 +169,16 @@ def test_get_next_no_days():
     d = get_next(base - relativedelta(weeks=1), Interval.WEEKS, 2, base_time)
     assert d == (today + relativedelta(weeks=1))
 
+
+def test_get_next_interval_months_no_days():
+    """Test that we can get the next due date from an interval, frequency, and base."""
+    # Check that it works for an event happening every day (starting from today)
+    today = (
+        datetime.now().astimezone().replace(hour=9, minute=30, second=0, microsecond=0)
+    )
+    base_time = time(hour=9, minute=30)
+    base = datetime.now().astimezone()
+
     # ----------------- TEST MONTHS ----------------- #
     # Test that it works with months
     d = get_next(base, Interval.MONTHS, 1, base_time)
@@ -173,6 +195,16 @@ def test_get_next_no_days():
     # And if our base changes...
     d = get_next(base - relativedelta(months=1), Interval.MONTHS, 2, base_time)
     assert d == (today + relativedelta(months=1))
+
+
+def test_get_next_interval_years_no_days():
+    """Test that we can get the next due date from an interval, frequency, and base."""
+    # Check that it works for an event happening every day (starting from today)
+    today = (
+        datetime.now().astimezone().replace(hour=9, minute=30, second=0, microsecond=0)
+    )
+    base_time = time(hour=9, minute=30)
+    base = datetime.now().astimezone()
 
     # ----------------- TEST YEARS ----------------- #
     # Test that it works with years
@@ -192,7 +224,7 @@ def test_get_next_no_days():
     assert d == (today + relativedelta(years=1))
 
 
-def test_get_next_specific_days():
+def test_get_next_interval_weeks_specific_days():
     """Test that we can get the next due date from an interval, frequency, days, and base."""
     today = (
         datetime.now().astimezone().replace(hour=9, minute=30, second=0, microsecond=0)
@@ -204,7 +236,7 @@ def test_get_next_specific_days():
     # Internally, we offset everything by 1, so account for that here
     days = [today.weekday(), today.weekday() + 2]
 
-    # ----------------- TEST DAYS ----------------- #
+    # ----------------- TEST WEEKS ----------------- #
     # Test that it works with days, if there is at least one remaining day this week
     d = get_next(monday, Interval.WEEKS, 1, base_time, days)
     assert d == (today + relativedelta(days=1))
@@ -231,6 +263,14 @@ def test_get_next_specific_days():
     # Test with a different frequency
     d = get_next(monday - relativedelta(weeks=2), Interval.WEEKS, 4, base_time, days)
     assert d == (today - relativedelta(days=1) + relativedelta(weeks=2))
+
+
+def test_get_next_interval_months_specific_days():
+    """Test that we can get the next due date from an interval, frequency, days, and base."""
+    today = (
+        datetime.now().astimezone().replace(hour=9, minute=30, second=0, microsecond=0)
+    )
+    base_time = time(hour=9, minute=30)
 
     # ----------------- TEST MONTHS ----------------- #
     # Test that it works with months, if there is at least one remaining day this month
@@ -260,6 +300,14 @@ def test_get_next_specific_days():
     # Test with a different frequency
     d = get_next(today - relativedelta(months=2), Interval.MONTHS, 4, base_time, days)
     assert d == (today + relativedelta(days=-1, months=2))
+
+
+def test_get_next_interval_years_specific_days():
+    """Test that we can get the next due date from an interval, frequency, days, and base."""
+    today = (
+        datetime.now().astimezone().replace(hour=9, minute=30, second=0, microsecond=0)
+    )
+    base_time = time(hour=9, minute=30)
 
     # ----------------- TEST YEARS ----------------- #
     # Test that it works with years, if there is at least one remaining day this year
