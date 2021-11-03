@@ -1,5 +1,6 @@
 """Update our recurring tasks database."""
 
+import time
 from datetime import date, datetime
 from os import environ
 from typing import List, Optional, Union
@@ -8,6 +9,7 @@ from loguru import logger
 
 from notion import Execution, NotionClient, Task
 from notion.orm import now_utc
+from notion.timezones import Timezone
 from utils.schedule import get_next_due_date
 
 
@@ -71,6 +73,24 @@ def handle_recurring_tasks():
     """Look through our todo list database to see if there are any recurring tasks
     that should be recreated."""
     client = NotionClient(api_key=environ["NOTION_API_KEY"])
+
+    # Get the timezone the user wants to use. There may be several entries if they've changed
+    # timezones, but we're only interested in the most recent (that has a name). Timezones
+    # are specified as strings, as described [here](https://docs.python.org/3/library/time.html#time.tzset)
+    timezone = Timezone.find_newest_by_or_raise(
+        client,
+        {
+            "property": "Name",
+            "text": {
+                "is_not_empty": True,
+            },
+        },
+    )
+
+    # Then, use that timezone (see docs above). Since datetime and other utilities use the
+    # `time` library, this will result in us using the timezone the user has requested.
+    environ["TZ"] = timezone.title
+    time.tzset()
 
     # First, get the last time this ran
     ts = Execution.get_last_execution_time_utc(client)
