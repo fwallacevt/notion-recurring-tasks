@@ -30,6 +30,7 @@ jobs:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
           NOTION_TASKS_DB_ID: ${{ secrets.NOTION_TASKS_DB_ID }}
           NOTION_EXECUTIONS_DB_ID: ${{ secrets.NOTION_EXECUTIONS_DB_ID }}
+          NOTION_TIMEZONES_DB_ID: ${{ secrets.NOTION_TIMEZONES_DB_ID }}
         run: pipenv run python cli.py
 
       # - name: commit files
