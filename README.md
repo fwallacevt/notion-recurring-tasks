@@ -185,11 +185,11 @@ Coming soon!
 - [x] Set status when saving new tasks
 - [ ] Need to set timezone in GitHub runner
 - [x] Create Notion daily/weekly dashboard
-- [ ] Sync with Asana (tasks assigned in Asana get copied over)
-- [ ] Sync with Google calendar
-  - [ ] Use [push notifications](https://developers.google.com/calendar/api/guides/push) to sync Google -> Notion
 - [ ] Make everything async
   - [ ] Should create new tasks in parallel and be resilient if one fails
+- [ ] Sync with Google calendar
+  - [ ] Use [push notifications](https://developers.google.com/calendar/api/guides/push) to sync Google -> Notion
+- [ ] Sync with Asana (tasks assigned in Asana get copied over)
 - [ ] Improve Schedule utility to return a date if there is no time component
 - [ ] Resolve todos
 - [ ] Implement [Eric's feedback](https://faradayio.slack.com/archives/DN6PMFWAE/p1635116064016800)

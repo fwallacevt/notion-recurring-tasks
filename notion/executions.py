@@ -86,12 +86,12 @@ class Execution(RecordBase):
 
     # == BEGIN CUSTOM CODE ==
     @classmethod
-    def get_last_execution_time_utc(
+    async def get_last_execution_time_utc(
         cls,
         client: NotionClient,
     ) -> datetime:
         """Get the last time this ran, in UTC."""
-        task = cls.find_newest_by(client)
+        task = await cls.find_newest_by(client)
 
         if task is not None:
             return task.date_created

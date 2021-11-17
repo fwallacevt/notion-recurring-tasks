@@ -1,9 +1,11 @@
 """Update our recurring tasks database."""
 
+import asyncio
 import time
+import traceback
 from datetime import date, datetime
 from os import environ
-from typing import List, Optional, Union
+from typing import Union
 
 from loguru import logger
 
@@ -22,54 +24,47 @@ def date_if_midnight(d: datetime) -> Union[date, datetime]:
     return d
 
 
-def create_new_recurring_tasks(client: NotionClient, tasks: List[Task]):
-    """Create new tasks for each of the recurring tasks. Just to be extra safe, we check that
+async def create_new_recurring_task(client: NotionClient, task: Task):
+    """Create a new recurring task for the given task. Just to be extra safe, we check that
     there isn't already an uncompleted task with the same name (which could happen if our
     script gets interrupted partway through).
 
     For each new task we create, we'll copy everything from the old task, set the "Parent"
     to the most recently completed task (create a singly-linked list), and update the due
     date to the next occurrence of this schedule"""
-    logger.info(f"Creating {len(tasks)} new recurring tasks.")
-    error: Optional[Exception] = None
-    for t in tasks:
-        try:
-            exists = Task.check_open_task_exists_by_name(client, t.name)
-            if exists:
-                logger.info(f"There is an open task with name {t.name} - skipping")
-                continue
+    logger.info(f"Creating new recurring task {task.name}.")
+    try:
+        exists = await Task.check_open_task_exists_by_name(client, task.name)
+        if exists:
+            logger.info(f"There is an open task with name {task.name} - skipping")
+            return
 
-            # Get the next due date, then make sure that we convert to EST so that Notion will display
-            # correctly
-            # TODO(fwallace): What will local time look like if we're running on GitHub runners? How
-            # do we know what local time zone is?
-            next_due = get_next_due_date(t)
-            # TODO(fwallace): The appropriate way to do this would actually be to generate the next due
-            # date as a `date` object, rather than `datetime`, if there is no time component. That is
-            # more involved and will have to come later.
-            next_due = date_if_midnight(next_due)
+        # Get the next due date, then make sure that we convert to EST so that Notion will display
+        # correctly
+        # TODO(fwallace): What will local time look like if we're running on GitHub runners? How
+        # do we know what local time zone is?
+        next_due_datetime = get_next_due_date(task)
+        # TODO(fwallace): The appropriate way to do this would actually be to generate the next due
+        # date as a `date` object, rather than `datetime`, if there is no time component. That is
+        # more involved and will have to come later.
+        next_due = date_if_midnight(next_due_datetime)
 
-            logger.info(
-                f"Creating new task {t.name}, with new due date {next_due} (previously {t.due_date})"
-            )
-            t.due_date = (
-                next_due.astimezone() if isinstance(next_due, datetime) else next_due
-            )
-            t.done = False
-            t.insert(client)
-        except Exception as e:
-            # We catch exceptions so that if one task fails, we don't blow up the whole run.
-            logger.error(f"Failed to create new task {t.name}, error: {e}")
-            error = e
-
-    if error is not None:
-        # We encountered some sort of error - raise it. We don't want to fail silently
-        # because that will insert a new "execution", and any failed tasks will never
-        # update.
-        raise error
+        logger.info(
+            f"Creating new task {task.name}, with new due date {next_due} (previously {task.due_date})"
+        )
+        task.due_date = (
+            next_due.astimezone() if isinstance(next_due, datetime) else next_due
+        )
+        task.done = False
+        await task.insert(client)
+    except Exception as e:
+        logger.error(
+            f"Failed to recreate task {task.name}, exception {e}, traceback: {traceback.format_exc()}"
+        )
+        raise
 
 
-def handle_recurring_tasks():
+async def handle_recurring_tasks():
     """Look through our todo list database to see if there are any recurring tasks
     that should be recreated."""
     client = NotionClient(api_key=environ["NOTION_API_KEY"])
@@ -93,11 +88,11 @@ def handle_recurring_tasks():
     time.tzset()
 
     # First, get the last time this ran
-    ts = Execution.get_last_execution_time_utc(client)
+    ts = await Execution.get_last_execution_time_utc(client)
     logger.info(f"Last executed: {ts}")
 
     # Query all tasks in our database that have been modified since that time
-    tasks_to_recreate = Task.find_completed_recurring_tasks_since(client, ts)
+    tasks_to_recreate = await Task.find_completed_recurring_tasks_since(client, ts)
     logger.info(
         f"Found {len(tasks_to_recreate)} recurring tasks to make: {[t.name for t in tasks_to_recreate]}"
     )
@@ -105,7 +100,17 @@ def handle_recurring_tasks():
     # Now, for each of these recurring tasks, we have to create a new task
     # for the next time that schedule should execute (unless there's an outstanding
     # task)
-    create_new_recurring_tasks(client, tasks_to_recreate)
+    logger.info(f"Creating {len(tasks_to_recreate)} new recurring tasks.")
+    responses = await asyncio.gather(
+        (create_new_recurring_task(client, t) for t in tasks_to_recreate),
+        return_exceptions=True,
+    )
+
+    # Check if we encountered an error, and don't save the execution if we did. We don't
+    # want to fail silently because that will insert a new "execution", and any failed
+    # tasks will never update.
+    if any(isinstance(r, Exception) for r in responses):
+        raise Exception(f"Failed to create some or all tasks.")
 
     # Save a new execution
     now = now_utc()
@@ -114,4 +119,4 @@ def handle_recurring_tasks():
         name=f"""Execution ts: {now.astimezone().isoformat()}""",
     )
     logger.info(f"Creating new execution record {execution.name}")
-    execution.insert(client)
+    await execution.insert(client)

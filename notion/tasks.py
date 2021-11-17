@@ -223,13 +223,13 @@ class Task(RecordBase):
 
     # == BEGIN CUSTOM CODE ==
     @classmethod
-    def check_open_task_exists_by_name(
+    async def check_open_task_exists_by_name(
         cls,
         client: NotionClient,
         task_name: str,
     ) -> bool:
         """Check if any open (incomplete) tasks exist with this name."""
-        task = cls.find_by(
+        task = await cls.find_by(
             client,
             {
                 "and": [
@@ -246,7 +246,7 @@ class Task(RecordBase):
         return task is not None
 
     @classmethod
-    def find_completed_recurring_tasks_since(
+    async def find_completed_recurring_tasks_since(
         cls,
         client: NotionClient,
         timestamp: datetime,
@@ -255,7 +255,7 @@ class Task(RecordBase):
         timestamp. This will also find previously-completed tasks that have been updated, if they
         were updated for some reason. We return a list of tasks, de-duplicated on name, that should
         be recreated with the next due date on the given schedule."""
-        tasks = cls.find_all_by(
+        tasks = await cls.find_all_by(
             client,
             {
                 "and": [
