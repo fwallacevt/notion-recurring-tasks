@@ -183,10 +183,10 @@ Coming soon!
   - [x] [Add
         quickstart](https://github.com/fwallacevt/notion-recurring-tasks/commit/fbc5119588e3cf183697d3ac1d83faceb31723d1#r58538760)
 - [x] Set status when saving new tasks
-- [ ] Need to set timezone in GitHub runner
+- [x] Need to set timezone in GitHub runner
 - [x] Create Notion daily/weekly dashboard
-- [ ] Make everything async
-  - [ ] Should create new tasks in parallel and be resilient if one fails
+- [x] Make everything async
+  - [x] Should create new tasks in parallel and be resilient if one fails
 - [ ] Improve Schedule utility to return a date if there is no time component
 - [ ] Sync with Google calendar
   - [ ] Use [push notifications](https://developers.google.com/calendar/api/guides/push) to sync Google -> Notion
