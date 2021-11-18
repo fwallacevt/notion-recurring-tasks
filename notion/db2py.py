@@ -592,12 +592,12 @@ def process_column(
     }
 
 
-def get_columns_json(table_id: str, table_name: str) -> Mapping[str, Any]:
+async def get_columns_json(table_id: str, table_name: str) -> Mapping[str, Any]:
     """
     Fetch the schema from Notion, as json
     """
     client = NotionClient(api_key=environ["NOTION_API_KEY"])
-    json = client.retrieve_db(table_id)
+    json = await client.retrieve_db(table_id)
     properties = json["properties"]
 
     return {
@@ -607,7 +607,7 @@ def get_columns_json(table_id: str, table_name: str) -> Mapping[str, Any]:
 
 
 async def generate_orm_decls(table_id: str, table_name: str) -> str:
-    output = get_columns_json(table_id, table_name)
+    output = await get_columns_json(table_id, table_name)
     table = Table(**output)
     custom = CustomCode.for_table(table_name)
     return table.python_code(custom)
