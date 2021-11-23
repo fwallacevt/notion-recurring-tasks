@@ -72,7 +72,7 @@ async def handle_recurring_tasks():
     # Get the timezone the user wants to use. There may be several entries if they've changed
     # timezones, but we're only interested in the most recent (that has a name). Timezones
     # are specified as strings, as described [here](https://docs.python.org/3/library/time.html#time.tzset)
-    timezone = Timezone.find_newest_by_or_raise(
+    timezone = await Timezone.find_newest_by_or_raise(
         client,
         {
             "property": "Name",
@@ -102,7 +102,7 @@ async def handle_recurring_tasks():
     # task)
     logger.info(f"Creating {len(tasks_to_recreate)} new recurring tasks.")
     responses = await asyncio.gather(
-        (create_new_recurring_task(client, t) for t in tasks_to_recreate),
+        *[create_new_recurring_task(client, t) for t in tasks_to_recreate],
         return_exceptions=True,
     )
 
