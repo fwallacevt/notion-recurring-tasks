@@ -381,7 +381,7 @@ def test_schedule_parses_task():
         due_date=today - relativedelta(days=3),
     )
     schedule = Schedule(task)
-    assert schedule._at_time == time(hour=0, minute=0).replace(tzinfo=today.tzinfo)
+    assert schedule._at_time is None
     assert schedule._base == task.due_date
     assert schedule._days == None
     assert schedule._interval == Interval.WEEKS
@@ -395,7 +395,7 @@ def test_schedule_parses_task():
         due_date=today - relativedelta(days=3),
     )
     schedule = Schedule(task)
-    assert schedule._at_time == time(hour=0, minute=0).replace(tzinfo=today.tzinfo)
+    assert schedule._at_time is None
     assert schedule._base == task.due_date
     assert schedule._days == [1, 2, 3, 5]
     assert schedule._interval == Interval.WEEKS

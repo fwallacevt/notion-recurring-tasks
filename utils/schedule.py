@@ -3,9 +3,9 @@
 
 import calendar
 import re
-from datetime import datetime, time
+from datetime import date, datetime, time
 from enum import Enum
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 from croniter import croniter
 from dateutil import parser
@@ -53,7 +53,7 @@ class Schedule:
     _base: datetime
 
     # Time that it's due
-    _at_time: time
+    _at_time: Optional[time]
 
     # Specific days of the week/month/year, as numbers (last is represented as -1)
     _days: Optional[List[int]]
@@ -71,7 +71,7 @@ class Schedule:
         return self._base
 
     @property
-    def at_time(self) -> time:
+    def at_time(self) -> Optional[time]:
         return self._at_time
 
     @property
@@ -85,8 +85,9 @@ class Schedule:
         if task.schedule is None:
             raise Exception(f"Task '{task.name}' has no schedule.")
 
-        # Make sure that days is initialized
+        # Make sure that days and at_time are initialized
         self._days = None
+        self._at_time = None
 
         # Handle some special cases...
         schedule = handle_special_cases(task.schedule)
@@ -112,9 +113,6 @@ class Schedule:
         # from due date/completed date, _or_ specific days this should be on, and maybe
         # a desired time it's due.
         start_from: Optional[StartFrom] = None
-
-        # Default time due is at the end of the day (midnight).
-        today_at_desired_time = parser.parse("12am")
         for c in components[1:]:
             # Check if it's of the form "from due date/start"
             if c.startswith("from"):
@@ -135,6 +133,10 @@ class Schedule:
                     self._days = parse_days(c)
             elif c.startswith("at"):
                 today_at_desired_time = parser.parse(c[3:])
+                self._at_time = time(
+                    hour=today_at_desired_time.hour,
+                    minute=today_at_desired_time.minute,
+                )
 
         # Now, check some of our configuration and make sure the base is set appropriately.
         # We set the base depending on `start_from`.
@@ -143,13 +145,11 @@ class Schedule:
                 f"Can't set both 'days' and whether to start from due date/completed date."
             )
 
+        # Get the base, and make sure we sync the timezones on "at_time" and "base"
         self._base = get_base(task, start_from, self._days)
+        if self._at_time is not None:
+            self._at_time = self._at_time.replace(tzinfo=self._base.tzinfo)
 
-        self._at_time = time(
-            hour=today_at_desired_time.hour,
-            minute=today_at_desired_time.minute,
-            tzinfo=self._base.tzinfo,
-        )
         logger.info(
             f"Schedule for task {task.name} has base {self._base}, at_time {self._at_time}"
         )
@@ -169,22 +169,24 @@ def get_next(
     base: datetime,
     interval: Interval,
     frequency: int,
-    at_time: time,
+    at_time: Optional[time],
     days: Optional[list[int]] = None,
-) -> datetime:
+) -> Union[datetime, date]:
     """Get the next due date, starting from the given base."""
     logger.info(
         f"Getting next due date with base {base}, interval {interval.name}, frequency {frequency}, at_time {at_time}, and days {days}"
     )
-    # TODO(fwallace): How do we deal with the desired time (e.g. if I have a task every
-    # day at 9am, and I completed it today at 1am, how do I ensure it is recreated for
-    # 9am today?) Do I replace hour + minute, and check if the base is < that (e.g.)
-    # Make sure we're working with everything as local time
+
     # Standardize on the current timezone, to account for crossing boundaries (e.g. daylight
     # savings time) if we're comparing dates across boundaries
     now = datetime.now().astimezone()
     base = base.replace(tzinfo=now.tzinfo)
     next_due_date = base.replace(tzinfo=now.tzinfo)
+
+    # If we don't have a time we expect this to be at, simply use all zeroes
+    due_time = time()
+    if at_time is not None:
+        due_time = at_time
 
     logger.info(f"Base in local timezone: {next_due_date}")
 
@@ -258,7 +260,7 @@ def get_next(
             # Next, figure out which week we're comparing against. This is Monday of either
             # this week, or the last week this schedule would have executed.
             due_base_local = (
-                base.replace(hour=at_time.hour, minute=at_time.minute, second=0)
+                base.replace(hour=due_time.hour, minute=due_time.minute, second=0)
                 - relativedelta(days=base.weekday())
                 + relativedelta(weeks=to_add[interval.name.lower()])
             )
@@ -266,7 +268,7 @@ def get_next(
             # Figure out which month we're comparing against. This is the first day
             # of this month, or the last month this schedule may have executed in.
             due_base_local = base.replace(
-                hour=at_time.hour, minute=at_time.minute, second=0, day=1
+                hour=due_time.hour, minute=due_time.minute, second=0, day=1
             ) + relativedelta(
                 **{interval.name.lower(): to_add[interval.name.lower()]}  # type: ignore
             )
@@ -274,8 +276,8 @@ def get_next(
             # Figure out which year we're comparing against. This is the first day
             # of this year, or the last year this schedule may have executed in.
             due_base_local = base.replace(
-                hour=at_time.hour,
-                minute=at_time.minute,
+                hour=due_time.hour,
+                minute=due_time.minute,
                 second=0,
                 day=1,
                 month=1,
@@ -342,13 +344,20 @@ def get_next(
         next_due_date = latest_due
 
     # This is probably already done, but just be safe here.
-    next_due_date = next_due_date.replace(
-        hour=at_time.hour, minute=at_time.minute, second=0, microsecond=0
-    )
+    if at_time is not None:
+        ret: Union[datetime, date] = next_due_date.replace(
+            hour=at_time.hour, minute=at_time.minute, second=0, microsecond=0
+        )
+    else:
+        ret = date(
+            year=next_due_date.year,
+            month=next_due_date.month,
+            day=next_due_date.day,
+        )
     logger.info(
         f"Next due date with base {base}, interval {interval.name}, frequency {frequency}, at_time {at_time}, and days {days}: {next_due_date}"
     )
-    return next_due_date
+    return ret
 
 
 def get_base(
@@ -368,7 +377,7 @@ def get_base(
     #
     # If we don't have "start from", the base will depend on if specific days have been
     # asked for.
-    base: Optional[datetime] = None
+    base: Optional[Union[date, datetime]] = None
     if start_from == StartFrom.COMPLETED_DATE:
         base = task.last_edited_time
     elif start_from == StartFrom.DUE_DATE:
@@ -391,6 +400,12 @@ def get_base(
         raise Exception(
             f"Cannot determine base for task '{task.name}' starting from {start_from.name}."
         )
+
+    # If our base is, in fact, a date, let's convert it to a datetime for everything
+    # downstream. Internally, we operate on datetimes, but we allow either datetimes or
+    # dates as input, and output either a datetime or date.
+    if not isinstance(base, datetime):
+        base = datetime.combine(base, time()).astimezone()
 
     return base.astimezone()
 
@@ -549,7 +564,7 @@ def parse_numerics(to_parse: str) -> List[int]:
         )
 
 
-def get_next_due_date(task: Task) -> datetime:
+def get_next_due_date(task: Task) -> Union[datetime, date]:
     """Given a task, figure out what its next due date will be based on its schedule. In its
     most basic form, a schedule will just be a Cron string. However, it may also take the following
     forms:

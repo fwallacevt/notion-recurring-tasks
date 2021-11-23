@@ -41,14 +41,7 @@ async def create_new_recurring_task(client: NotionClient, task: Task):
 
         # Get the next due date, then make sure that we convert to EST so that Notion will display
         # correctly
-        # TODO(fwallace): What will local time look like if we're running on GitHub runners? How
-        # do we know what local time zone is?
-        next_due_datetime = get_next_due_date(task)
-        # TODO(fwallace): The appropriate way to do this would actually be to generate the next due
-        # date as a `date` object, rather than `datetime`, if there is no time component. That is
-        # more involved and will have to come later.
-        next_due = date_if_midnight(next_due_datetime)
-
+        next_due = get_next_due_date(task)
         logger.info(
             f"Creating new task {task.name}, with new due date {next_due} (previously {task.due_date})"
         )
