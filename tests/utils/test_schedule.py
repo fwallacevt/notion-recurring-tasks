@@ -22,8 +22,6 @@ from utils.schedule import (
     parse_weekdays,
 )
 
-# TODO(fwallace): Test get next due date with a Cron string?
-
 
 def test_parse_frequency_and_interval():
     """Unit test for `parse_frequency_and_interval`. This should parse "Every (X) (interval)"."""
@@ -429,3 +427,20 @@ def test_schedule_parses_task():
             due_date=today - relativedelta(days=3),
         )
         schedule = Schedule(task)
+
+
+def test_get_next_due_date_cron_str():
+    today_8_am = (
+        datetime.now().astimezone().replace(hour=8, minute=0, second=0, microsecond=0)
+    )
+    task = Task(
+        date_created=now_utc(),
+        last_edited_time=now_utc(),
+        name="Test",
+        schedule="0 8 * * *",
+        due_date=today_8_am - relativedelta(days=3),
+    )
+
+    d = get_next_due_date(task)
+    print(d)
+    assert d == today_8_am + relativedelta(days=1)

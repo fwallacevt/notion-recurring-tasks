@@ -187,17 +187,17 @@ Coming soon!
 - [x] Create Notion daily/weekly dashboard
 - [x] Make everything async
   - [x] Should create new tasks in parallel and be resilient if one fails
-- [ ] Improve Schedule utility to return a date if there is no time component
+- [x] Improve Schedule utility to return a date if there is no time component
+- [x] Resolve todos
+- [ ] Add a code coverage badge (and ignore notion/\* for coverage) (https://github.com/marketplace/actions/dynamic-badges)
+- [ ] Post on Reddit
 - [ ] Sync with Google calendar
   - [ ] Use [push notifications](https://developers.google.com/calendar/api/guides/push) to sync Google -> Notion
-- [ ] Sync with Asana (tasks assigned in Asana get copied over)
-- [ ] Resolve todos
 - [ ] Implement [Eric's feedback](https://faradayio.slack.com/archives/DN6PMFWAE/p1635116064016800)
   - [ ] Try extracting some smaller functions from the big ones. Hang some off of AST types?
   - [ ] Review [ASTs](https://en.wikipedia.org/wiki/Abstract_syntax_tree) - can I apply?
-- [ ] Post on Reddit?
-- [ ] Add a code coverage badge (and ignore notion/\* for coverage) (https://github.com/marketplace/actions/dynamic-badges)
 - [ ] Extend schedule to support:
   - Every (X) months on the (first/second/third/fourth/fifth/last) (monday/tuesday/wednesday/...)
   - Every (X) months on the (first/last) workday
   - Every (Jan/Feb/March...) on the (X) day
+- [ ] Sync with Asana (tasks assigned in Asana get copied over)

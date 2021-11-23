@@ -12,7 +12,7 @@ from dateutil import parser
 from dateutil.relativedelta import relativedelta
 from loguru import logger
 
-from notion import Task, now_utc
+from notion import Task
 
 
 class StartFrom(Enum):
@@ -126,7 +126,6 @@ class Schedule:
                     )
                 elif self._interval == Interval.WEEKS:
                     # Parse weekdays is a bit more general; it handles parsing day strings as well
-                    # TODO(fwallace): Could I pass a dictionary of replacements here, make this more general?
                     self._days = parse_weekdays(c)
                 else:
                     # Otherwise, we expect this to be a set of numeric days of the week/month/year
@@ -603,7 +602,6 @@ def get_next_due_date(task: Task) -> Union[datetime, date]:
     the configuration. Note that you cannot specify _*both*_ "start from" _*and*_ specific days to
     execute on."""
 
-    base = now_utc()
     if task.schedule is None:
         raise Exception(f"Task '{task.name}' has no schedule")
 
@@ -614,6 +612,7 @@ def get_next_due_date(task: Task) -> Union[datetime, date]:
         logger.info(
             f"Task {task.name} has a cron-compatible schedule - deferring to croniter"
         )
+        base = datetime.now().astimezone()
         iter = croniter(task.schedule, base)
         return iter.get_next(datetime)
     else:
