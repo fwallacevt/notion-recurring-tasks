@@ -1,0 +1,13 @@
+[run]
+omit =
+    # Omit anything in the tests directory
+    tests/*
+
+    # Also omit anything in `notion`
+    notion/*
+
+    # Omit CI files
+    ci_helper.py
+
+    # Omit any test files
+    test.*
