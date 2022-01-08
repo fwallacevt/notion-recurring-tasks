@@ -168,7 +168,7 @@ def get_next(
     base: datetime,
     interval: Interval,
     frequency: int,
-    at_time: Optional[time],
+    at_time: Optional[time] = None,
     days: Optional[list[int]] = None,
 ) -> Union[datetime, date]:
     """Get the next due date, starting from the given base."""
@@ -176,16 +176,23 @@ def get_next(
         f"Getting next due date with base {base}, interval {interval.name}, frequency {frequency}, at_time {at_time}, and days {days}"
     )
 
-    # Standardize on the current timezone, to account for crossing boundaries (e.g. daylight
-    # savings time) if we're comparing dates across boundaries
-    now = datetime.now().astimezone()
-    base = base.replace(tzinfo=now.tzinfo)
-    next_due_date = base.replace(tzinfo=now.tzinfo)
-
     # If we don't have a time we expect this to be at, simply use all zeroes
     due_time = time()
     if at_time is not None:
         due_time = at_time
+
+    # Standardize on the current timezone, to account for crossing boundaries (e.g. daylight
+    # savings time) if we're comparing dates across boundaries. Also, if we don't have "at_time",
+    # then we effectively ignore the time component by zeroing it out in `now` as well. Below,
+    # we compare the next due date to now, and we only care about the time component if we have
+    # a specific time.
+    now = datetime.now().astimezone()
+    if at_time is None:
+        now = now.replace(
+            hour=due_time.hour, minute=due_time.minute, second=0, microsecond=0
+        )
+    base = base.replace(tzinfo=now.tzinfo)
+    next_due_date = base.replace(tzinfo=now.tzinfo)
 
     logger.info(f"Base in local timezone: {next_due_date}")
 
@@ -198,10 +205,20 @@ def get_next(
     # Weeks are a little more complex, because we want "week boundaries crossed" (e.g.
     # Sunday -> Monday is 1 week elapsed, but only one day). To do that, we compare
     # Monday of the week we're in, to Monday of the week the base is in, and divide
-    # by the number of days in a week. We use the floor operator (`//`).
+    # by the number of days in a week. We use the floor operator (`//`). We also make
+    # sure to zero out the time component when comparing, to get an accurate picture
+    # of days elapsed.
     weeks_elapsed = (
         (now - relativedelta(days=now.weekday()))
-        - (base - relativedelta(days=base.weekday()))
+        - (
+            base.replace(
+                hour=0,
+                minute=0,
+                second=0,
+                microsecond=0,
+            )
+            - relativedelta(days=base.weekday())
+        )
     ).days // 7
 
     # Calculate elapsed times and how many days/weeks/months/years we would add, based
