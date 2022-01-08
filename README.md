@@ -100,7 +100,7 @@ that you cannot specify _*both*_ "start from" _*and*_ specific days to execute o
 #### Setup
 
 First, clone the [provided todo list
-template](https://airy-gravity-ede.notion.site/1fdbd589f8764f08bef994417a4452b4?v=20895c9c302e4bdaa6ebee836c2d2ab1). You
+template](https://airy-gravity-ede.notion.site/Todo-List-Template-5209eba6a8754039b7cd316cbb2f1e21). You
 may also use your own databases, with the following requirements:
 
 - The database you store your tasks in must have:
@@ -113,6 +113,8 @@ may also use your own databases, with the following requirements:
 - The database you store executions in must have:
   - name (title)
   - date_created (datetime)
+- The database you store timezone information in must have:
+  - name (title), containing at least one entry with a [correctly formatted](https://docs.python.org/3/library/time.html#time.tzset) timezone string
 
 _*If you create your own databases, you will need to [regenerate ORM classes](./docs/orm-usage.md).*_
 
@@ -127,6 +129,7 @@ on your fork:
 - NOTION_TASKS_DB_ID (your tasks database ID; see [here](https://stackoverflow.com/a/67729240) for how to get a database
   ID)
 - NOTION_EXECUTIONS_DB_ID (your executions database ID)
+- NOTOIN_TIMEZONE_DB_ID (your timezone database ID)
 - NOTION_API_KEY (your integration token; if you didn't copy it earlier, you may copy it by going to "Settings &
   Members" -> "Integrations", clicking the ellipsis next to your api key, and selecting "Copy internal integration
   token")
