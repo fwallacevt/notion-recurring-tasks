@@ -136,68 +136,12 @@ extension's schedule](./customizing-schedules.md).
 
 ### Habit tracking
 
-Coming soon!
+To be implemented.
 
 ### Interfacing with Google Calendar
 
-Coming soon!
+To be implemented.
 
 ### Dashboard generation
 
-Coming soon!
-
-## TODOs
-
-- [x] Add comments/doc strings
-- [x] Use Notion DB for keeping track of runs, not a file
-- [x] Add gh action to run nightly (date might get messed up because Notion API only compares dates)
-- [x] Improve copy functionality (should be able to take arbitrary database and property names, fetch the types, and know
-      how to copy from one to the other; e.g. we know how to copy multi-select, select, date, etc.)
-- [x] Add gh action to run python job 2x/day
-- [x] Remove/archive JS code
-- [x] Improve Cron functionality - cron, or:
-  - Daily
-  - Weekly (on same day)
-  - Monthly
-  - Yearly
-  - Every (day/weekday)
-  - Every (X) weeks on (monday/tuesday/wednesday/...)
-  - Every (X) months on the (X) day
-  - Every (X) months on the (first/second/third/fourth/fifth/last) (monday/tuesday/wednesday/...)
-  - Every (X) months on the (first/last) workday
-- [x] Add tests
-  - [x] Test schedule utility
-- [x] Make schedule attributes read only
-- [x] Run tests on PRs
-- [x] Lots of logging
-- [x] Add better comments around scheduling - what's supported, specifically?
-- [x] Flesh out README/documentation
-  - [x] Add a badge for runnion Notion
-  - [x] Add a badge for tests
-- [x] Get Eric's/Seamus' review
-- [x] Fix CI test issue (probably timezone related);
-- [x] Implement Seamus' feedback:
-  - [x] [Do "select"/"multi-select" need to be
-        enums?](https://github.com/fwallacevt/notion-recurring-tasks/commit/95dd55f7b87cd8d762878a6eecf61317bb82b7af#r58538653)
-  - [x] Can I set a select/multiselect with id/name/color Null?
-  - [x] [Add
-        quickstart](https://github.com/fwallacevt/notion-recurring-tasks/commit/fbc5119588e3cf183697d3ac1d83faceb31723d1#r58538760)
-- [x] Set status when saving new tasks
-- [x] Need to set timezone in GitHub runner
-- [x] Create Notion daily/weekly dashboard
-- [x] Make everything async
-  - [x] Should create new tasks in parallel and be resilient if one fails
-- [x] Improve Schedule utility to return a date if there is no time component
-- [x] Resolve todos
-- [ ] Add a code coverage badge (and ignore notion/\* for coverage) (https://github.com/marketplace/actions/dynamic-badges)
-- [ ] Post on Reddit
-- [ ] Sync with Google calendar
-  - [ ] Use [push notifications](https://developers.google.com/calendar/api/guides/push) to sync Google -> Notion
-- [ ] Implement [Eric's feedback](https://faradayio.slack.com/archives/DN6PMFWAE/p1635116064016800)
-  - [ ] Try extracting some smaller functions from the big ones. Hang some off of AST types?
-  - [ ] Review [ASTs](https://en.wikipedia.org/wiki/Abstract_syntax_tree) - can I apply?
-- [ ] Extend schedule to support:
-  - Every (X) months on the (first/second/third/fourth/fifth/last) (monday/tuesday/wednesday/...)
-  - Every (X) months on the (first/last) workday
-  - Every (Jan/Feb/March...) on the (X) day
-- [ ] Sync with Asana (tasks assigned in Asana get copied over)
+To be implemented.
