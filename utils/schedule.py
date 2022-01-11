@@ -327,7 +327,9 @@ def get_next(
                 next_due_on_day = due_base_local + relativedelta(days=d - 1)
 
             logger.info(f"Next due on day {d}: {next_due_on_day}. Now: {now}")
-            if next_due_on_day < now:
+            # If the next due date on this day is before now, or the next due date on this day is less
+            # than or equal to our starting base, we want to keep iterating into the future.
+            if next_due_on_day <= base or next_due_on_day < now:
                 if d == -1:
                     # If we're looking for the last day of the month, set that for the
                     # next month. We do that by incrementing to the next month (in case
