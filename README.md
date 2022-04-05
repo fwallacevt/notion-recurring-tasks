@@ -135,7 +135,7 @@ on your fork:
   token")
 
 And just like that, you should be good to go! Now, you can [customize your databases](./docs/orm-usage.md) or [the
-extension's schedule](./customizing-schedules.md).
+extension's schedule](./docs/customizing-schedules.md).
 
 ### Habit tracking
 
