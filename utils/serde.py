@@ -2,7 +2,17 @@
 
 from abc import ABCMeta
 from copy import copy
-from typing import Any, Callable, List, Mapping, Optional, Tuple, Type, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 from uuid import UUID
 
 # from .locator import Locator
@@ -105,7 +115,9 @@ def recursively_get_annotations(ty: Type) -> Mapping[str, Type]:
     # Recursively gather annotations for base classes
     for base in getattr(ty, "__bases__", {}):
         if issubclass(base, Deserializable) and (base != Deserializable):
-            annotations = dict(annotations, **recursively_get_annotations(base))
+            annotations = dict(
+                annotations, **recursively_get_annotations(base)
+            )
 
     return annotations
 
@@ -130,7 +142,9 @@ def recursively_deserialize_type(ty: Type, value: Optional[Any] = None) -> Any:
     elif ty == list:
         if args is None or len(args) != 1:
             raise Exception(f"Can't deserialize list, args: {str(args)}")
-        return [recursively_deserialize_type(ty=args[0], value=v) for v in value]
+        return [
+            recursively_deserialize_type(ty=args[0], value=v) for v in value
+        ]
     elif ty != Any and issubclass(ty, Deserializable):
         return ty.from_json(value)
 
