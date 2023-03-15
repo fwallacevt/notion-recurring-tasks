@@ -6,7 +6,7 @@ on:
     # - cron: "0 0 * * *" # runs at 00:00 UTC (8pm EST) everyday
     # - cron: "0 10 * * *" # runs at 12:00 UTC (5/6am EST) everyday
     - cron: "0 3 * * *" # runs at 03:00 UTC (8pm PST) everyday
-    - cron: "0 15 * * *" # runs at 15:00 UTC (5/6am PST) everyday
+    - cron: "0 12 * * *" # runs at 12:00 UTC (5/6am PST) everyday
 
 jobs:
   build:
