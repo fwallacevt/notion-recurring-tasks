@@ -33,7 +33,7 @@ class NotionClient:
         if page_size is not None:
             payload["page_size"] = page_size
 
-        async with httpx.AsyncClient(timeout=15.0) as client:
+        async with httpx.AsyncClient(timeout=60.0) as client:
             # Query the database with the provided parameters, and check that the call succeeded
             response = await client.post(
                 database_url,
@@ -56,7 +56,7 @@ class NotionClient:
         # Set the database url
         database_url = f"{NOTION_API_URL}/databases/{database_id}"
 
-        async with httpx.AsyncClient(timeout=15.0) as client:
+        async with httpx.AsyncClient(timeout=60.0) as client:
             # Retrieve the database, and check that the call succeeded
             response = await client.get(
                 database_url,
@@ -81,7 +81,7 @@ class NotionClient:
             "parent": {"database_id": database_id},
             "properties": properties,
         }
-        async with httpx.AsyncClient(timeout=15.0) as client:
+        async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(
                 database_url,
                 headers={
