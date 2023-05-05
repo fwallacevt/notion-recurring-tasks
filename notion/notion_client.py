@@ -33,7 +33,7 @@ class NotionClient:
         if page_size is not None:
             payload["page_size"] = page_size
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=10.0) as client:
             # Query the database with the provided parameters, and check that the call succeeded
             response = await client.post(
                 database_url,
@@ -56,7 +56,7 @@ class NotionClient:
         # Set the database url
         database_url = f"{NOTION_API_URL}/databases/{database_id}"
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=10.0) as client:
             # Retrieve the database, and check that the call succeeded
             response = await client.get(
                 database_url,
@@ -69,7 +69,9 @@ class NotionClient:
 
             return response.json()
 
-    async def add_page_to_db(self, database_id: str, properties: Mapping[str, Any]):
+    async def add_page_to_db(
+        self, database_id: str, properties: Mapping[str, Any]
+    ):
         """Add a page, with the database as its parent."""
         # Build the db url
         database_url = f"{NOTION_API_URL}/pages"
@@ -79,7 +81,7 @@ class NotionClient:
             "parent": {"database_id": database_id},
             "properties": properties,
         }
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.post(
                 database_url,
                 headers={
