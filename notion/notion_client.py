@@ -69,9 +69,7 @@ class NotionClient:
 
             return response.json()
 
-    async def add_page_to_db(
-        self, database_id: str, properties: Mapping[str, Any]
-    ):
+    async def add_page_to_db(self, database_id: str, properties: Mapping[str, Any]):
         """Add a page, with the database as its parent."""
         # Build the db url
         database_url = f"{NOTION_API_URL}/pages"
